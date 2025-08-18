@@ -1,0 +1,384 @@
+/**
+ * Test Suite for Raffle Winner Selection System
+ * 
+ * This file contains comprehensive unit tests for the raffle system
+ * covering edge cases, validation, and core functionality.
+ * 
+ * To run these tests in development:
+ * 1. Ensure convex dev is running
+ * 2. Use test data or mock environment
+ * 3. Test each function individually
+ */
+
+import { describe, test, expect, beforeEach } from "@jest/globals";
+import { ConvexTestingHelper } from "convex/testing";
+import { api } from "./_generated/api";
+import schema from "./schema";
+
+// Mock environment variables for testing
+const TEST_ENV = {
+  NEXT_PUBLIC_RAFFLE_START_DATE: "2025-08-18T00:00:00Z"
+};
+
+/**
+ * UNIT TEST SCENARIOS
+ * 
+ * These are the test cases that should be validated:
+ */
+
+describe("Raffle Winner Selection System", () => {
+  let t: ConvexTestingHelper<typeof schema>;
+
+  beforeEach(async () => {
+    // Initialize Convex testing helper
+    t = new ConvexTestingHelper(schema);
+  });
+
+  /**
+   * TEST 1: Timer Logic and Date Calculations
+   */
+  describe("Timer and Date Logic", () => {
+    test("should calculate correct end date (start + 22 days)", async () => {
+      const status = await t.query(api.raffleWinner.getRaffleStatus);
+      
+      const expectedStartTime = new Date("2025-08-18T00:00:00Z").getTime();
+      const expectedEndTime = expectedStartTime + (22 * 24 * 60 * 60 * 1000);
+      
+      expect(status.startDate).toBe(expectedStartTime);
+      expect(status.endDate).toBe(expectedEndTime);
+      expect(status.endDate - status.startDate).toBe(22 * 24 * 60 * 60 * 1000);
+    });
+
+    test("should correctly identify if raffle has ended", async () => {
+      const status = await t.query(api.raffleWinner.getRaffleStatus);
+      const now = Date.now();
+      
+      expect(status.hasEnded).toBe(now > status.endDate);
+      
+      if (status.hasEnded) {
+        expect(status.timeRemaining).toBe(0);
+      } else {
+        expect(status.timeRemaining).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  /**
+   * TEST 2: Lead Management and Uniqueness
+   */
+  describe("Lead Management", () => {
+    beforeEach(async () => {
+      // Clear existing data
+      const existingLeads = await t.query(api.leads.getAllLeads, { limit: 1000 });
+      // Note: In real implementation, you'd clear test data here
+    });
+
+    test("should add unique leads correctly", async () => {
+      // Add first lead
+      const leadId1 = await t.mutation(api.leads.addLead, {
+        email: "test1@example.com",
+        phone: "+1234567890",
+        source: "test",
+      });
+      expect(leadId1).toBeDefined();
+
+      // Try to add duplicate lead - should return existing ID
+      const leadId2 = await t.mutation(api.leads.addLead, {
+        email: "test1@example.com",
+        phone: "+1987654321",
+        source: "test",
+      });
+      expect(leadId2).toBe(leadId1);
+
+      // Add different lead
+      const leadId3 = await t.mutation(api.leads.addLead, {
+        email: "test2@example.com",
+        phone: "+1111111111",
+        source: "test",
+      });
+      expect(leadId3).not.toBe(leadId1);
+    });
+
+    test("should validate email format", async () => {
+      await expect(
+        t.mutation(api.leads.addLead, {
+          email: "invalid-email",
+          phone: "+1234567890",
+          source: "test",
+        })
+      ).rejects.toThrow("Invalid email format");
+    });
+
+    test("should validate phone format", async () => {
+      await expect(
+        t.mutation(api.leads.addLead, {
+          email: "test@example.com",
+          phone: "invalid",
+          source: "test",
+        })
+      ).rejects.toThrow("Invalid phone number format");
+    });
+  });
+
+  /**
+   * TEST 3: Winner Selection Logic
+   */
+  describe("Winner Selection", () => {
+    beforeEach(async () => {
+      // Deactivate existing winners
+      const existingWinners = await t.db.query("winners").collect();
+      for (const winner of existingWinners) {
+        await t.db.patch(winner._id, { isActive: false });
+      }
+    });
+
+    test("should prevent winner selection if raffle has not ended", async () => {
+      // If raffle is still active, selection should fail
+      const status = await t.query(api.raffleWinner.getRaffleStatus);
+      
+      if (!status.hasEnded) {
+        await expect(
+          t.action(api.raffleWinner.selectWinner, { forceSelection: false })
+        ).rejects.toThrow("Raffle has not ended yet");
+      }
+    });
+
+    test("should handle empty leads gracefully", async () => {
+      // Clear all leads
+      const allLeads = await t.db.query("leads").collect();
+      for (const lead of allLeads) {
+        await t.db.delete(lead._id);
+      }
+
+      // Try to select winner with no leads
+      const result = await t.action(api.raffleWinner.checkAndSelectWinner);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("No leads available");
+    });
+
+    test("should select winner randomly with proper distribution", async () => {
+      // Add test leads
+      const testEmails = [
+        "winner1@example.com",
+        "winner2@example.com", 
+        "winner3@example.com",
+        "winner4@example.com",
+        "winner5@example.com"
+      ];
+
+      for (const email of testEmails) {
+        await t.mutation(api.leads.addLead, {
+          email,
+          phone: "+1234567890",
+          source: "test",
+        });
+      }
+
+      // Force select winner multiple times and track distribution
+      const selections = new Map<string, number>();
+      const iterations = 100;
+
+      for (let i = 0; i < iterations; i++) {
+        // Clear previous winner
+        const existingWinners = await t.db.query("winners").collect();
+        for (const winner of existingWinners) {
+          await t.db.delete(winner._id);
+        }
+
+        // Select new winner
+        const result = await t.action(api.raffleWinner.forceSelectWinner);
+        
+        expect(result.success).toBe(true);
+        expect(result.winner).toBeDefined();
+        expect(testEmails).toContain(result.winner!.email);
+
+        // Track selection
+        const count = selections.get(result.winner!.email) || 0;
+        selections.set(result.winner!.email, count + 1);
+      }
+
+      // Verify all emails were selected at least once (randomness check)
+      // Note: This test may occasionally fail due to randomness
+      expect(selections.size).toBeGreaterThan(1);
+      
+      // Verify no single email dominates (should be roughly distributed)
+      const maxSelections = Math.max(...selections.values());
+      expect(maxSelections).toBeLessThan(iterations * 0.8); // No more than 80% of selections
+    });
+
+    test("should store winner correctly", async () => {
+      // Add a test lead
+      await t.mutation(api.leads.addLead, {
+        email: "winner@example.com",
+        phone: "+1234567890",
+        source: "test",
+      });
+
+      // Force select winner
+      const result = await t.action(api.raffleWinner.forceSelectWinner);
+      
+      expect(result.success).toBe(true);
+      expect(result.winner?.email).toBe("winner@example.com");
+
+      // Verify winner is stored in database
+      const storedWinner = await t.query(api.raffleWinner.getCurrentWinner);
+      expect(storedWinner).toBeDefined();
+      expect(storedWinner!.winnerEmail).toBe("winner@example.com");
+      expect(storedWinner!.isActive).toBe(true);
+      expect(storedWinner!.selectionMethod).toBe("crypto.randomInt");
+      expect(storedWinner!.totalLeadsCount).toBe(1);
+    });
+
+    test("should prevent duplicate winner selection", async () => {
+      // Add test lead
+      await t.mutation(api.leads.addLead, {
+        email: "winner@example.com",
+        phone: "+1234567890",
+        source: "test",
+      });
+
+      // Select winner first time
+      const result1 = await t.action(api.raffleWinner.forceSelectWinner);
+      expect(result1.success).toBe(true);
+      expect(result1.alreadySelected).toBe(false);
+
+      // Try to select winner again
+      const result2 = await t.action(api.raffleWinner.selectWinner, { forceSelection: true });
+      expect(result2.success).toBe(true);
+      expect(result2.alreadySelected).toBe(true);
+      expect(result2.winner?.email).toBe(result1.winner?.email);
+    });
+  });
+
+  /**
+   * TEST 4: Data Integrity and Edge Cases
+   */
+  describe("Data Integrity", () => {
+    test("should maintain only one active winner", async () => {
+      // Add test leads
+      await t.mutation(api.leads.addLead, {
+        email: "test@example.com",
+        phone: "+1234567890",
+        source: "test",
+      });
+
+      // Force select winner twice
+      await t.action(api.raffleWinner.forceSelectWinner);
+      await t.action(api.raffleWinner.forceSelectWinner);
+
+      // Check only one active winner exists
+      const activeWinners = await t.db
+        .query("winners")
+        .withIndex("by_active", (q) => q.eq("isActive", true))
+        .collect();
+      
+      expect(activeWinners.length).toBe(1);
+    });
+
+    test("should handle concurrent winner selection", async () => {
+      // Add test lead
+      await t.mutation(api.leads.addLead, {
+        email: "concurrent@example.com",
+        phone: "+1234567890",
+        source: "test",
+      });
+
+      // Simulate concurrent selections (in real scenario, this would be Promise.all)
+      const result1 = await t.action(api.raffleWinner.forceSelectWinner);
+      const result2 = await t.action(api.raffleWinner.selectWinner, { forceSelection: true });
+
+      // One should succeed, other should recognize existing winner
+      expect(result1.success || result2.success).toBe(true);
+      
+      if (result1.success && result2.success) {
+        expect(result1.alreadySelected || result2.alreadySelected).toBe(true);
+      }
+    });
+  });
+
+  /**
+   * TEST 5: API Integration Tests
+   */
+  describe("API Integration", () => {
+    test("raffle status API should return correct structure", async () => {
+      const status = await t.query(api.raffleWinner.getRaffleStatus);
+      
+      expect(typeof status.startDate).toBe("number");
+      expect(typeof status.endDate).toBe("number");
+      expect(typeof status.currentTime).toBe("number");
+      expect(typeof status.hasEnded).toBe("boolean");
+      expect(typeof status.hasWinner).toBe("boolean");
+      expect(typeof status.totalUniqueLeads).toBe("number");
+      expect(typeof status.timeRemaining).toBe("number");
+    });
+
+    test("raffle stats should provide comprehensive information", async () => {
+      const stats = await t.query(api.raffleWinner.getRaffleStats);
+      
+      expect(stats.raffleStatus).toBeDefined();
+      expect(typeof stats.totalWinnersEverSelected).toBe("number");
+      expect(typeof stats.totalLeadsAllTime).toBe("number");
+      expect(Array.isArray(stats.allWinners)).toBe(true);
+      expect(Array.isArray(stats.recentLeads)).toBe(true);
+    });
+  });
+});
+
+/**
+ * MANUAL TESTING SCENARIOS
+ * 
+ * These scenarios should be tested manually in the UI:
+ * 
+ * 1. **Landing Page Lead Entry**:
+ *    - Enter valid email + phone → should succeed
+ *    - Enter duplicate email → should accept (existing lead)
+ *    - Enter invalid email → should show error
+ *    - Enter invalid phone → should show error
+ * 
+ * 2. **Winner Page Countdown**:
+ *    - Before raffle ends → should show countdown timer
+ *    - Timer updates every second
+ *    - Shows participant count
+ * 
+ * 3. **Winner Selection**:
+ *    - After raffle ends → should automatically select winner
+ *    - Shows winner email and selection timestamp
+ *    - Displays fairness information (total participants)
+ * 
+ * 4. **Edge Cases**:
+ *    - No participants → shows appropriate message
+ *    - Multiple visits after selection → shows same winner
+ *    - Force selection (dev mode) → works correctly
+ * 
+ * 5. **Admin Controls (Development)**:
+ *    - Refresh status button works
+ *    - Force select winner works
+ *    - Only visible in development mode
+ */
+
+/**
+ * PERFORMANCE TESTS
+ * 
+ * Test with various data scales:
+ * - 10 leads
+ * - 100 leads
+ * - 1000 leads (target scale)
+ * 
+ * Verify:
+ * - Winner selection completes within 5 seconds
+ * - UI remains responsive during selection
+ * - Database queries are efficient
+ */
+
+/**
+ * SECURITY TESTS
+ * 
+ * Verify:
+ * - Environment variables are properly secured
+ * - Force selection only works in development
+ * - No sensitive data exposed in API responses
+ * - Randomness is cryptographically secure
+ */
+
+export {};
