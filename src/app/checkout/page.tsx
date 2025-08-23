@@ -4,15 +4,25 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+// import PhoneInput from 'react-phone-number-input';
+// import 'react-phone-number-input/style.css';
+// import '../../styles/phone-input.css';
+// import type { Value } from 'react-phone-number-input';
 
 function CheckoutPageContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
+  
+  // Product selection states
+  const [productId, setProductId] = useState<string>("");
+  const [variantId, setVariantId] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
 
   useEffect(() => {
     const qtyParam = searchParams.get("quantity");
@@ -22,11 +32,22 @@ function CheckoutPageContent() {
         setQuantity(parsedQty);
       }
     }
+    
+    // Capture product selection parameters
+    const productIdParam = searchParams.get("productId");
+    const variantIdParam = searchParams.get("variantId");
+    const colorParam = searchParams.get("color");
+    const sizeParam = searchParams.get("size");
+    
+    if (productIdParam) setProductId(productIdParam);
+    if (variantIdParam) setVariantId(variantIdParam);
+    if (colorParam) setSelectedColor(colorParam);
+    if (sizeParam) setSelectedSize(sizeParam);
   }, [searchParams]);
 
-  const isBundle = quantity === 5;
-  const price = isBundle ? 100 : quantity * 25;
-  const savings = isBundle ? "Save $25!" : "";
+  const isBundle = quantity === 4;
+  const price = isBundle ? 100 : quantity * 50;  // Matches database: $50 per entry
+  const savings = isBundle ? "Save $100!" : "";
 
   // Email validation without state updates (pure function)
   const isEmailValid = (emailValue: string) => {
@@ -112,7 +133,12 @@ function CheckoutPageContent() {
       const requestBody = {
         quantity,
         email: trimmedEmail.toLowerCase(),
-        phone: phone.trim() || undefined,
+        phone: phone || undefined,
+        // Product selection data
+        productId: productId || undefined,
+        variantId: variantId || undefined,
+        selectedColor: selectedColor || undefined,
+        selectedSize: selectedSize || undefined,
       };
       
       console.log("📦 Request body:", requestBody);
@@ -231,13 +257,34 @@ function CheckoutPageContent() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold">
-                    {isBundle ? "5 Raffle Entries" : `${quantity} Raffle Entry`}
+                    {isBundle ? "4 Raffle Entries" : `${quantity} Raffle Entry${quantity > 1 ? 's' : ''}`}
                   </h3>
                   <p className="text-sm text-slate-300">
                     Most Valuable Holiday Collection
                   </p>
+                  {/* Product Selection Details */}
+                  {(selectedColor || selectedSize) && (
+                    <div className="mt-2 space-y-1">
+                      {selectedColor && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-slate-400">Color:</span>
+                          <span className="text-xs text-white font-medium capitalize">
+                            {selectedColor}
+                          </span>
+                        </div>
+                      )}
+                      {selectedSize && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-slate-400">Size:</span>
+                          <span className="text-xs text-white font-medium">
+                            {selectedSize}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {savings && (
-                    <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-green-500/20 text-green-300 rounded-full">
+                    <span className="inline-block mt-2 px-2 py-1 text-xs font-medium bg-green-500/20 text-green-300 rounded-full">
                       {savings}
                     </span>
                   )}
@@ -245,7 +292,7 @@ function CheckoutPageContent() {
                 <div className="text-right">
                   <div className="text-xl font-bold">${price}</div>
                   {isBundle && (
-                    <div className="text-sm text-slate-400 line-through">$125</div>
+                    <div className="text-sm text-slate-400 line-through">$200</div>
                   )}
                 </div>
               </div>
@@ -353,7 +400,7 @@ function CheckoutPageContent() {
                   <input
                     type="tel"
                     id="phone"
-                    value={phone}
+                    value={phone || ''}
                     onChange={(e) => {
                       setPhone(e.target.value);
                       setError(""); // Clear error when user starts typing

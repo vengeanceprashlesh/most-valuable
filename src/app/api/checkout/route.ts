@@ -8,6 +8,12 @@ export async function POST(req: Request) {
     const quantity = Number(body?.quantity ?? 0);
     let email = typeof body?.email === "string" ? body.email : undefined;
     const phone = typeof body?.phone === "string" ? body.phone : undefined;
+    
+    // Product selection data
+    const productId = typeof body?.productId === "string" ? body.productId : undefined;
+    const variantId = typeof body?.variantId === "string" ? body.variantId : undefined;
+    const selectedColor = typeof body?.selectedColor === "string" ? body.selectedColor : undefined;
+    const selectedSize = typeof body?.selectedSize === "string" ? body.selectedSize : undefined;
 
     if (!Number.isFinite(quantity) || quantity <= 0) {
       return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
@@ -28,7 +34,7 @@ export async function POST(req: Request) {
 
     const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
-    const isBundle = quantity === 5; // UI currently offers 1 or 5
+    const isBundle = quantity === 4; // UI offers 1 or 4
 
     // TEMP workaround: Convex deployment still requires email; synthesize if absent
     if (!email) {
@@ -45,6 +51,11 @@ export async function POST(req: Request) {
       successUrl: `${origin}/thank-you`,
       cancelUrl: `${origin}/shop`,
       ipAddress,
+      // Product selection data
+      productId,
+      variantId,
+      selectedColor,
+      selectedSize,
     });
 
     return NextResponse.json({ url: result.url });

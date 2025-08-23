@@ -19,10 +19,21 @@ export default function UltraSecureAdminDashboard() {
   const adminLogin = useMutation(api.adminAuth.adminLogin);
   const adminLogout = useMutation(api.adminAuth.adminLogout);
   const selectWinner = useMutation(api.winnerSelection.selectRaffleWinner);
+  const resetSecurity = useMutation(api.adminAuth.resetAdminSecurity);
 
   // Authenticated queries
   const entries = useQuery(
     api.entries.getAllEntries, 
+    sessionToken ? { limit: 100 } : "skip"
+  );
+  
+  const raffleStats = useQuery(
+    api.entries.getRaffleStats,
+    sessionToken ? {} : "skip"
+  );
+  
+  const leads = useQuery(
+    api.leads.getAllLeads,
     sessionToken ? { limit: 100 } : "skip"
   );
   
@@ -221,10 +232,27 @@ export default function UltraSecureAdminDashboard() {
 
           {isLocked && (
             <div className="bg-red-900/50 border border-red-500 p-4 rounded-lg mb-4">
-              <p className="text-red-400 text-sm text-center">
+              <p className="text-red-400 text-sm text-center mb-3">
                 🚨 SECURITY LOCKOUT ACTIVE<br />
                 {Math.ceil((lockoutTime - Date.now()) / 60000)} MINUTES REMAINING
               </p>
+              <button
+                onClick={async () => {
+                  if (confirm("⚠️ SECURITY RESET WARNING\n\nThis will clear all lockouts and failed login attempts. Are you sure?")) {
+                    try {
+                      await resetSecurity({});
+                      setLockoutTime(0);
+                      setLoginAttempts(0);
+                      alert("✅ Security lockouts have been reset. You can now try logging in again.");
+                    } catch (error) {
+                      alert(`❌ Failed to reset security: ${error}`);
+                    }
+                  }
+                }}
+                className="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-sm font-bold"
+              >
+                🛠️ EMERGENCY SECURITY RESET
+              </button>
             </div>
           )}
           
@@ -264,10 +292,22 @@ export default function UltraSecureAdminDashboard() {
     );
   }
 
+  // Use enhanced stats from the backend
   const completedEntries = entries?.entries.filter(e => e.paymentStatus === "completed") || [];
-  const totalRevenue = completedEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  const totalEntries = completedEntries.reduce((sum, entry) => sum + entry.count, 0);
-  const uniqueCustomers = new Set(completedEntries.map(e => e.email)).size;
+  const paidEntries = completedEntries.filter(e => e.amount > 0);
+  const freeEntries = completedEntries.filter(e => e.amount === 0);
+  
+  // Use raffleStats for accurate data or fallback to manual calculation
+  const totalRevenue = raffleStats?.totalRevenue || paidEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalEntries = raffleStats?.totalEntries || completedEntries.reduce((sum, entry) => sum + entry.count, 0);
+  const uniqueCustomers = raffleStats?.uniqueParticipants || new Set(completedEntries.map(e => e.email)).size;
+  
+  // Additional breakdown stats
+  const freeParticipants = new Set(freeEntries.map(e => e.email)).size;
+  const paidParticipants = new Set(paidEntries.map(e => e.email)).size;
+  const freeTickets = freeEntries.reduce((sum, entry) => sum + entry.count, 0);
+  const paidTickets = paidEntries.reduce((sum, entry) => sum + entry.count, 0);
+  const bundlePurchases = raffleStats?.bundlePurchases || paidEntries.filter(e => e.bundle).length;
 
   return (
     <main className="min-h-screen bg-gray-900 text-white">
@@ -337,7 +377,7 @@ export default function UltraSecureAdminDashboard() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-gray-800 p-6 rounded-lg border-l-4 border-green-500">
                 <h3 className="text-gray-400 text-sm font-medium">💰 Total Revenue</h3>
                 <p className="text-3xl font-bold text-green-400">
@@ -349,14 +389,85 @@ export default function UltraSecureAdminDashboard() {
                 <p className="text-3xl font-bold text-blue-400">{totalEntries}</p>
               </div>
               <div className="bg-gray-800 p-6 rounded-lg border-l-4 border-purple-500">
-                <h3 className="text-gray-400 text-sm font-medium">👥 Participants</h3>
+                <h3 className="text-gray-400 text-sm font-medium">👥 Total Participants</h3>
                 <p className="text-3xl font-bold text-purple-400">{uniqueCustomers}</p>
               </div>
               <div className="bg-gray-800 p-6 rounded-lg border-l-4 border-yellow-500">
-                <h3 className="text-gray-400 text-sm font-medium">📈 Avg Order</h3>
-                <p className="text-3xl font-bold text-yellow-400">
-                  ${completedEntries.length ? (totalRevenue / completedEntries.length / 100).toFixed(2) : "0.00"}
-                </p>
+                <h3 className="text-gray-400 text-sm font-medium">📦 Bundle Purchases</h3>
+                <p className="text-3xl font-bold text-yellow-400">{bundlePurchases}</p>
+              </div>
+            </div>
+
+            {/* PARTICIPANT BREAKDOWN */}
+            <div className="bg-gray-800 p-6 rounded-lg mb-8">
+              <h3 className="text-xl font-bold mb-6">📊 PARTICIPANT & TICKET BREAKDOWN</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Free Participants */}
+                <div className="bg-gray-700 p-6 rounded-lg border-l-4 border-cyan-500">
+                  <h4 className="text-lg font-bold text-cyan-400 mb-4">🆓 Free Participants (Subscribers)</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">👥 Unique Subscribers:</span>
+                      <span className="text-2xl font-bold text-cyan-400">{freeParticipants}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">🎫 Free Tickets:</span>
+                      <span className="text-2xl font-bold text-cyan-400">{freeTickets}</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      💡 Users who signed up on landing page get 1 free ticket each
+                    </div>
+                  </div>
+                </div>
+
+                {/* Paid Participants */}
+                <div className="bg-gray-700 p-6 rounded-lg border-l-4 border-emerald-500">
+                  <h4 className="text-lg font-bold text-emerald-400 mb-4">💳 Paid Participants (Customers)</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">👥 Unique Buyers:</span>
+                      <span className="text-2xl font-bold text-emerald-400">{paidParticipants}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">🎫 Purchased Tickets:</span>
+                      <span className="text-2xl font-bold text-emerald-400">{paidTickets}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">💰 Revenue:</span>
+                      <span className="text-xl font-bold text-green-400">${(totalRevenue / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      🛒 Customers who purchased 1 ticket ($50) or 4-ticket bundle ($100)
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="mt-6 p-4 bg-gray-600 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-blue-400">{totalEntries}</p>
+                    <p className="text-xs text-gray-400">Total Pool</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-purple-400">{uniqueCustomers}</p>
+                    <p className="text-xs text-gray-400">All Participants</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-orange-400">
+                      {uniqueCustomers > 0 ? (totalEntries / uniqueCustomers).toFixed(1) : '0'}
+                    </p>
+                    <p className="text-xs text-gray-400">Avg Tickets/Person</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-pink-400">
+                      {freeParticipants > 0 ? Math.round((freeParticipants / uniqueCustomers) * 100) : 0}%
+                    </p>
+                    <p className="text-xs text-gray-400">Free Participants</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -526,7 +637,7 @@ export default function UltraSecureAdminDashboard() {
                 <p className="text-sm text-yellow-300 mb-2">⚠️ Database initialization is required if countdown timer is not working</p>
                 <p className="text-xs text-gray-400">This will create the default raffle configuration if none exists.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button 
                   className="bg-purple-600 hover:bg-purple-700 px-6 py-4 rounded-lg font-medium border border-purple-500"
                   onClick={async () => {
@@ -559,6 +670,40 @@ export default function UltraSecureAdminDashboard() {
                   }}
                 >
                   📊 Check Database Status
+                </button>
+                <button 
+                  className="bg-orange-600 hover:bg-orange-700 px-6 py-4 rounded-lg font-medium border border-orange-500"
+                  onClick={() => {
+                    const debugInfo = `🔍 COMPLETE DEBUG INFO:\n\n` +
+                      `📧 Leads Data:\n` +
+                      `- Total Leads: ${leads?.leads.length || 0}\n` +
+                      `- Lead Emails: ${leads?.leads.map(l => l.email).join(', ') || 'None'}\n\n` +
+                      `📊 Raw Entry Data:\n` +
+                      `- Total Entries Query: ${entries?.entries.length || 0}\n` +
+                      `- All Entry Emails: ${entries?.entries.map(e => e.email).join(', ') || 'None'}\n` +
+                      `- Completed Entries: ${completedEntries.length}\n` +
+                      `- Free Entries: ${freeEntries.length}\n` +
+                      `- Paid Entries: ${paidEntries.length}\n\n` +
+                      `👥 Participant Counts:\n` +
+                      `- Free Participants: ${freeParticipants}\n` +
+                      `- Free Entry Emails: ${freeEntries.map(e => e.email).join(', ') || 'None'}\n` +
+                      `- Paid Participants: ${paidParticipants}\n` +
+                      `- Paid Entry Emails: ${paidEntries.map(e => e.email).join(', ') || 'None'}\n` +
+                      `- Total Unique: ${uniqueCustomers}\n\n` +
+                      `🎫 Ticket Counts:\n` +
+                      `- Free Tickets: ${freeTickets}\n` +
+                      `- Paid Tickets: ${paidTickets}\n` +
+                      `- Total Tickets: ${totalEntries}\n\n` +
+                      `📈 Stats Query Result:\n` +
+                      `- Total Entries: ${raffleStats?.totalEntries || 'N/A'}\n` +
+                      `- Total Revenue: $${(raffleStats?.totalRevenue || 0) / 100}\n` +
+                      `- Unique Participants: ${raffleStats?.uniqueParticipants || 'N/A'}\n\n` +
+                      `🔄 This shows complete data. Check if emails match between leads and entries.`;
+                    
+                    alert(debugInfo);
+                  }}
+                >
+                  🐛 Debug Data
                 </button>
               </div>
             </div>

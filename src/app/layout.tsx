@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import React from "react";
+import SplashScreen from "@/components/SplashScreen";
 import { ConvexClientProvider } from "../components/ConvexClientProvider";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-slate-900`}>
         <ConvexClientProvider>
+          <SplashScreen />
           {children}
         </ConvexClientProvider>
       </body>

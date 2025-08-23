@@ -23,14 +23,7 @@ export default function Home() {
     
     if (showSuccess && redirectCountdown > 0) {
       interval = setInterval(() => {
-        setRedirectCountdown(prev => {
-          if (prev <= 1) {
-            // Redirect to shop page
-            router.push('/shop');
-            return 0;
-          }
-          return prev - 1;
-        });
+        setRedirectCountdown(prev => prev - 1);
       }, 1000);
     }
 
@@ -39,6 +32,17 @@ export default function Home() {
         clearInterval(interval);
       }
     };
+  }, [showSuccess, redirectCountdown]);
+
+  // Separate effect to handle redirect when countdown reaches 0
+  useEffect(() => {
+    if (showSuccess && redirectCountdown === 0) {
+      const timeoutId = setTimeout(() => {
+        router.push('/shop');
+      }, 100); // Small delay to ensure state updates are complete
+      
+      return () => clearTimeout(timeoutId);
+    }
   }, [showSuccess, redirectCountdown, router]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -85,8 +89,7 @@ export default function Home() {
         aria-hidden
       />
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/50" />
+      {/* Removed dark overlay to keep background clear */}
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between p-4">
@@ -98,41 +101,22 @@ export default function Home() {
       </header>
 
       {/* Main content - centered */}
-      <main className="relative z-10 flex items-center justify-center min-h-screen px-6 -mt-16">
+      <main className="relative z-10 flex items-center justify-center min-h-screen px-6">
         <div className="w-full max-w-md">
           {/* Centered card - completely transparent on mobile, visible on desktop */}
-          <div className="bg-transparent sm:bg-white/10 backdrop-blur-none sm:backdrop-blur-md border-transparent sm:border-white/20 rounded-2xl p-8 shadow-none sm:shadow-2xl">
+          <div className="bg-transparent border-transparent rounded-2xl p-8">
             {/* Logo */}
             <div className="text-center mb-6">
               <Image 
                 src="/LogoWhite.png" 
                 alt="Most Valuable" 
-                width={200} 
-                height={56} 
-                className="mx-auto h-12 w-auto" 
+                width={640} 
+                height={180} 
+                className="mx-auto h-40 w-auto sm:h-48" 
               />
             </div>
 
-            {/* Tagline */}
-            <h1 className="text-white text-center text-xl font-semibold mb-2">
-              Timeless pieces for modern living
-            </h1>
-            
-            <p className="text-white/80 text-center text-sm mb-4">
-              Enter our exclusive raffle for premium lifestyle products
-            </p>
-            
-            {/* Free Entry Highlight */}
-            <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur border border-green-400/30 rounded-lg p-3 mb-6">
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-green-400">✨</span>
-                <span className="text-white font-semibold text-sm">FREE RAFFLE ENTRY</span>
-                <span className="text-green-400">✨</span>
-              </div>
-              <p className="text-white/90 text-xs text-center">
-                Get 1 free raffle entry just for joining! 🎫
-              </p>
-            </div>
+            {/* Removed tagline and highlight to keep a clean hero with large MV logo */}
 
             {/* Form */}
             {!showSuccess ? (
@@ -142,23 +126,19 @@ export default function Home() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                   required
-                />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Phone number (optional)"
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 backdrop-blur border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                 />
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? "Adding..." : "Join Waitlist"}
+                  {isSubmitting ? "Adding..." : "Subscribe"}
                 </button>
+                <p className="text-[10px] leading-snug text-white/70 text-center">
+                  By submitting this form and signing up for texts, you consent to receive marketing emails and text messages (e.g., promos, cart reminders) at the contact provided. Consent is not a condition of purchase. Msg & data rates may apply. Msg frequency varies. Unsubscribe anytime by replying STOP or using the unsubscribe link. <Link href="/privacy" className="underline">Privacy Policy</Link> & <Link href="/terms" className="underline">Terms</Link>.
+                </p>
               </form>
             ) : (
               <div className="text-center p-6 bg-green-500/20 backdrop-blur border border-green-400/50 rounded-xl mb-4">
@@ -208,21 +188,7 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex justify-center items-center gap-4 mt-6 text-white/70 text-xs">
-              <div className="flex items-center gap-1">
-                <span className="text-green-400">🔒</span>
-                <span>Secure</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-blue-400">⚡</span>
-                <span>Instant</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-yellow-400">🏆</span>
-                <span>Fair</span>
-              </div>
-            </div>
+            {/* Trust indicators removed as requested */}
           </div>
         </div>
       </main>

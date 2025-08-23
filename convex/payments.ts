@@ -14,8 +14,13 @@ export const createPendingEntry = mutation({
     bundle: v.optional(v.boolean()),
     stripeSessionId: v.string(),
     ipAddress: v.optional(v.string()),
+    // Product selection parameters
+    productId: v.optional(v.string()),
+    variantId: v.optional(v.string()),
+    selectedColor: v.optional(v.string()),
+    selectedSize: v.optional(v.string()),
   },
-  handler: async (ctx, { email, phone, count, bundle, stripeSessionId, ipAddress }) => {
+  handler: async (ctx, { email, phone, count, bundle, stripeSessionId, ipAddress, productId, variantId, selectedColor, selectedSize }) => {
     // Normalize optional email
     const normalizedEmail = email ? email.toLowerCase() : "";
 
@@ -57,6 +62,11 @@ export const createPendingEntry = mutation({
       paymentStatus: "pending",
       bundle: bundle || false,
       ipAddress,
+      // Product selection data
+      productId,
+      variantId,
+      variantColor: selectedColor,
+      size: selectedSize,
       createdAt: now,
     });
   },

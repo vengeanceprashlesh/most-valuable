@@ -23,11 +23,21 @@ export default defineSchema({
     paymentStatus: v.string(), // 'pending', 'completed', 'failed', 'refunded'
     createdAt: v.number(),
     ipAddress: v.optional(v.string()),
-    bundle: v.optional(v.boolean()), // Whether it was a bundle purchase (5 for $100)
+    bundle: v.optional(v.boolean()), // Whether it was a bundle purchase (4 for $100)
+    // Product selection details
+    productId: v.optional(v.string()), // Product ID (e.g., "raffle")
+    productName: v.optional(v.string()), // Product name for easy reference
+    variantId: v.optional(v.string()), // Selected variant (color) ID
+    variantColor: v.optional(v.string()), // Selected color name (e.g., "Black", "White")
+    size: v.optional(v.string()), // Selected size (e.g., "M", "L")
+    productCategory: v.optional(v.string()), // Category (e.g., "tee")
   }).index("by_email", ["email"])
     .index("by_payment_status", ["paymentStatus"])
     .index("by_created_at", ["createdAt"])
-    .index("by_stripe_session", ["stripeSessionId"]),
+    .index("by_stripe_session", ["stripeSessionId"])
+    .index("by_product", ["productId"])
+    .index("by_variant", ["variantId"])
+    .index("by_size", ["size"]),
 
   // Raffle configuration
   raffleConfig: defineTable({

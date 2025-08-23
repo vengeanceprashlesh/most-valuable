@@ -32,9 +32,9 @@ export const initializeDatabase = mutation({
       endDate,
       isActive: true,
       totalEntries: 0,
-      pricePerEntry: 2500, // $25.00 in cents
-      bundlePrice: 10000, // $100.00 in cents (was $125, now $100 for 5 entries)
-      bundleSize: 5,
+      pricePerEntry: 5000, // $50.00 in cents
+      bundlePrice: 10000, // $100.00 in cents (4 entries for $100)
+      bundleSize: 4,
       productName: "Most Valuable Raffle Entry",
       productDescription: "Enter to win amazing prizes from Most Valuable",
     });
@@ -96,6 +96,7 @@ export const updateRaffleConfig = mutation({
     productName: v.optional(v.string()),
     productDescription: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
+    totalEntries: v.optional(v.number()), // Added for sync functionality
   },
   handler: async (ctx, { adminToken, ...updates }) => {
     // Verify admin token
@@ -123,6 +124,56 @@ export const updateRaffleConfig = mutation({
       success: true, 
       message: "Raffle configuration updated successfully",
       updated: cleanUpdates,
+    };
+  },
+});
+
+/**
+ * Sync raffle totalEntries with actual completed entries
+ * This fixes sync issues between frontend and backend
+ */
+export const syncRaffleTotals = mutation({
+  args: {
+    adminToken: v.string(),
+  },
+  handler: async (ctx, { adminToken }) => {
+    // Verify admin token
+    if (adminToken !== "mvr-admin-2025-secure-token") {
+      throw new Error("Unauthorized: Invalid admin token");
+    }
+
+    // Get current active raffle
+    const activeRaffle = await ctx.db
+      .query("raffleConfig")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .first();
+
+    if (!activeRaffle) {
+      throw new Error("No active raffle configuration found");
+    }
+
+    // Get all completed entries and calculate actual total
+    const completedEntries = await ctx.db
+      .query("entries")
+      .withIndex("by_payment_status", (q) => q.eq("paymentStatus", "completed"))
+      .collect();
+
+    const actualTotal = completedEntries.reduce((sum, entry) => sum + entry.count, 0);
+
+    // Update raffleConfig.totalEntries to match actual total
+    await ctx.db.patch(activeRaffle._id, {
+      totalEntries: actualTotal,
+    });
+
+    console.log(`🔄 Synced raffleConfig.totalEntries from ${activeRaffle.totalEntries} to ${actualTotal}`);
+
+    return {
+      success: true,
+      previousTotal: activeRaffle.totalEntries,
+      newTotal: actualTotal,
+      difference: activeRaffle.totalEntries - actualTotal,
+      completedTransactions: completedEntries.length,
+      message: `Successfully synced totalEntries to ${actualTotal}`,
     };
   },
 });

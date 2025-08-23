@@ -1,0 +1,121 @@
+/* Custom styling for react-phone-number-input */
+.phone-input-container .PhoneInput {
+  display: flex;
+  align-items: center;
+}
+
+.phone-input-container .PhoneInputInput {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.phone-input-container .PhoneInputInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.phone-input-container .PhoneInputInput:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.phone-input-container .PhoneInputInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.phone-input-container .PhoneInputCountrySelect {
+  margin-right: 8px;
+  padding: 12px 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.phone-input-container .PhoneInputCountrySelect:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.phone-input-container .PhoneInputCountrySelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Country flag icon */
+.phone-input-container .PhoneInputCountryIcon {
+  margin-right: 6px;
+  width: 20px;
+  height: 15px;
+}
+
+/* Dropdown arrow */
+.phone-input-container .PhoneInputCountrySelectArrow {
+  color: rgba(255, 255, 255, 0.7);
+  margin-left: 4px;
+  width: 12px;
+  height: 12px;
+}
+
+/* Error state */
+.phone-input-container.error .PhoneInputInput,
+.phone-input-container.error .PhoneInputCountrySelect {
+  border-color: #ef4444;
+}
+
+.phone-input-container.error .PhoneInputInput:focus,
+.phone-input-container.error .PhoneInputCountrySelect:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .phone-input-container .PhoneInput {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .phone-input-container .PhoneInputCountrySelect {
+    width: 100%;
+    margin-right: 0;
+  }
+  
+  .phone-input-container .PhoneInputInput {
+    width: 100%;
+  }
+}
+
+/* Dark theme specific overrides */
+@media (prefers-color-scheme: dark) {
+  .phone-input-container .PhoneInputCountrySelect option {
+    background-color: #1f2937;
+    color: white;
+  }
+}
+
+/* Custom styling for better integration with the existing form */
+.phone-input-container .PhoneInput {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.phone-input-container .PhoneInputCountryIcon--border {
+  box-shadow: none;
+}
+
+.phone-input-container .PhoneInputCountryIcon {
+  border-radius: 2px;
+}

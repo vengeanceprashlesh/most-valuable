@@ -6,7 +6,7 @@ import { api } from "./_generated/api";
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes
 const SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours
-const ADMIN_PASSWORD_HASH = "mvr-admin-ultra-secure-2025-f8e9d2c1a3b4567890abcdef"; // This would be bcrypt in production
+const ADMIN_PASSWORD_CORRECT = "mvr-admin-2025-secure-token"; // Current admin password
 
 /**
  * Secure admin authentication with rate limiting and brute force protection
@@ -59,7 +59,7 @@ export const adminLogin = mutation({
     }
 
     // Verify password (in production, use bcrypt.compare)
-    if (password !== "mvr-admin-ultra-secure-2025-f8e9d2c1a3b4567890abcdef") {
+    if (password !== ADMIN_PASSWORD_CORRECT) {
       // Log failed attempt
       await ctx.db.insert("adminSecurity", {
         type: "failed_login",
@@ -202,6 +202,47 @@ export const getAdminSecurityLogs = query({
       .query("adminSecurity")
       .order("desc")
       .take(limit);
+  },
+});
+
+/**
+ * Reset all admin lockouts and failed attempts (for testing/recovery)
+ */
+export const resetAdminSecurity = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Clear all lockouts
+    const lockouts = await ctx.db
+      .query("adminSecurity")
+      .filter((q) => q.eq(q.field("type"), "lockout"))
+      .collect();
+
+    for (const lockout of lockouts) {
+      await ctx.db.delete(lockout._id);
+    }
+
+    // Clear all failed attempts from last 24 hours
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+    const failedAttempts = await ctx.db
+      .query("adminSecurity")
+      .filter((q) => q.and(
+        q.eq(q.field("type"), "failed_login"),
+        q.gte(q.field("createdAt"), oneDayAgo)
+      ))
+      .collect();
+
+    for (const attempt of failedAttempts) {
+      await ctx.db.delete(attempt._id);
+    }
+
+    console.log(`🔧 ADMIN SECURITY RESET: Cleared ${lockouts.length} lockouts and ${failedAttempts.length} failed attempts`);
+
+    return {
+      success: true,
+      clearedLockouts: lockouts.length,
+      clearedFailedAttempts: failedAttempts.length,
+    };
   },
 });
 

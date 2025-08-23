@@ -34,6 +34,7 @@ export const updateRaffleConfig = mutation({
     productName: v.optional(v.string()),
     productDescription: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
+    totalEntries: v.optional(v.number()),
   },
   handler: async (ctx, { raffleId, ...updates }) => {
     // Remove undefined values

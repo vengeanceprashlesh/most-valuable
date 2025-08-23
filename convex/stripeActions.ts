@@ -17,6 +17,11 @@ export const createCheckoutSession: any = action({
     successUrl: v.string(),
     cancelUrl: v.string(),
     ipAddress: v.optional(v.string()),
+    // Product selection parameters
+    productId: v.optional(v.string()),
+    variantId: v.optional(v.string()),
+    selectedColor: v.optional(v.string()),
+    selectedSize: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -95,6 +100,11 @@ export const createCheckoutSession: any = action({
         bundle: args.bundle,
         stripeSessionId: session.id,
         ipAddress: args.ipAddress,
+        // Product selection data
+        productId: args.productId,
+        variantId: args.variantId,
+        selectedColor: args.selectedColor,
+        selectedSize: args.selectedSize,
       });
 
       console.log(`Created checkout session for ${args.email}: ${args.count} entries`);

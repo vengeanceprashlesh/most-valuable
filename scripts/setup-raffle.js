@@ -33,9 +33,9 @@ async function setupRaffle() {
       name: "Most Valuable Holiday Raffle 2025",
       startDate: startDate,
       endDate: endDate,
-      pricePerEntry: 2500, // $25.00 in cents
-      bundlePrice: 10000, // $100.00 in cents (5 entries for $100)
-      bundleSize: 5,
+      pricePerEntry: 5000, // $50.00 in cents
+      bundlePrice: 10000, // $100.00 in cents (4 entries for $100)
+      bundleSize: 4,
       productName: "Most Valuable Holiday Collection",
       productDescription: "Premium holiday merchandise collection"
     };

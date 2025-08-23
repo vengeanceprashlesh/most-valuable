@@ -14,11 +14,15 @@ export const products: Product[] = [
   // Buyable raffle product (uses /public/mainProduct.png)
   {
     id: "raffle",
-    name: "1-of-1 Raffle Tee",
+    name: "A Valuable Shirt",
     slug: "1-of-1-raffle-tee",
     status: "available",
     category: "tee",
-    media: ["/mainProduct.png"],
+    media: ["/GoldRushCollection.png"],
+    variants: [
+      { id: "raffle-blk", color: "Black", media: ["/mainProduct-black.png"] },
+      { id: "raffle-wht", color: "White", media: ["/mainProduct-white.png"] },
+    ],
   },
   // Coming soon products in positions 2 and 3
   {
@@ -39,37 +43,33 @@ export const products: Product[] = [
   },
   // Rest of the products
   {
-    "id": "p1",
-    "name": "A Valuable Shirt",
-    "slug": "a-valuable-shirt",
+    "id": "p1b",
+    "name": "Box Logo Tee - Black",
+    "slug": "a-valuable-shirt-black",
     "status": "sold_out",
     "category": "tee",
-    "variants": [
-      { "id": "p1-blk", "color": "Black", "media": ["/media/1A Valuable Shirt-b1.png"] },
-      { "id": "p1-wht", "color": "White", "media": ["/media/1A Valuable Shirt-w1.png"] }
-    ]
+    "media": ["/media/1A Valuable Shirt-b1.png", "/media/2A Valuable Shirt-b2.png"]
   },
   {
-    "id": "p2",
-    "name": "Most Valuable Box Logo Tee",
-    "slug": "most-valuable-box-logo-tee",
+    "id": "p1w",
+    "name": "Box Logo Tee - White",
+    "slug": "a-valuable-shirt-white",
     "status": "sold_out",
     "category": "tee",
-    "variants": [
-      { "id": "p2-blk", "color": "Black", "media": ["/media/2A Valuable Shirt-b2.png"] },
-      { "id": "p2-wht", "color": "White", "media": ["/media/2A Valuable Shirt2.png"] }
-    ]
+    "media": ["/media/1A Valuable Shirt-w1.png", "/media/2A Valuable Shirt2.png"]
   },
   {
-    "id": "p3",
-    "name": "Members Only Tee",
-    "slug": "members-only-tee",
-    "status": "sold_out",
-    "category": "tee",
-    "variants": [
-      { "id": "p3-blk", "color": "Black", "media": ["/media/3A Valuable Shirt-memb1.jpeg"] },
-      { "id": "p3-wht", "color": "White", "media": ["/media/3A Valuable Shirt-memw1.jpeg"] }
-    ]
+    id: "p3",
+    name: "Members Only Tee",
+    slug: "members-only-tee-black",
+    status: "sold_out",
+    category: "tee",
+    // default media (black) if no variant selected
+    media: ["/media/3A Valuable Shirt-memb1.jpeg"],
+    variants: [
+      { id: "p3b", color: "Black", media: ["/media/3A Valuable Shirt-memb1.jpeg"] },
+      { id: "p3w", color: "White", media: ["/media/3A Valuable Shirt-memw1.jpeg"] },
+    ],
   },
   {
     "id": "p4",
