@@ -60,26 +60,44 @@ export const selectWinner: any = action({
       }
     }
 
-    // Secure random selection
-    const randomIndex = crypto.randomInt(0, entryBag.length);
-    const winningEntry = entryBag[randomIndex];
-    const winner = winningEntry.email;
+    // Support multiple winners (default to 1 if not specified)
+    const maxWinners = activeRaffle.maxWinners || 1;
+    const winners: { email: string; entryNumber: number }[] = [];
+    const usedIndices = new Set<number>();
+    
+    // Select multiple winners without replacement
+    for (let i = 0; i < maxWinners && winners.length < entryBag.length; i++) {
+      let randomIndex: number;
+      do {
+        randomIndex = crypto.randomInt(0, entryBag.length);
+      } while (usedIndices.has(randomIndex));
+      
+      usedIndices.add(randomIndex);
+      winners.push(entryBag[randomIndex]);
+    }
 
-    // Update raffle with winner
+    // Update raffle with first winner (for backwards compatibility)
     const winnerSelectedAt = Date.now();
+    const primaryWinner = winners[0].email;
+    
     await ctx.runMutation(api.raffleMutations.updateRaffleWinner, {
       raffleId: activeRaffle._id!,
-      winner,
+      winner: primaryWinner,
       winnerSelectedAt,
     });
 
-    // Log the winner selection for audit purposes
-    console.log(`Winner selected: ${winner}, Entry #${winningEntry.entryNumber}, Selected at: ${new Date(winnerSelectedAt).toISOString()}`);
+    // Log all winner selections for audit purposes
+    console.log(`Selected ${winners.length} winner(s):`);
+    winners.forEach((winner, index) => {
+      console.log(`  Winner ${index + 1}: ${winner.email}, Entry #${winner.entryNumber}`);
+    });
+    console.log(`Selected at: ${new Date(winnerSelectedAt).toISOString()}`);
 
     return {
-      winner,
+      winner: primaryWinner, // Primary winner for backwards compatibility
+      winners: winners, // All winners
       totalEntries: entryBag.length,
-      winningEntryNumber: winningEntry.entryNumber,
+      winningEntryNumbers: winners.map(w => w.entryNumber),
       selectedAt: winnerSelectedAt,
       uniqueParticipants: new Set(entries.map((e: any) => e.email)).size,
       alreadySelected: false
@@ -96,11 +114,14 @@ export const setupRaffle: any = action({
     name: v.string(),
     startDate: v.number(),
     endDate: v.number(),
+    timerDisplayDate: v.optional(v.number()), // When timer should start displaying (for UI)
+    paymentStartDate: v.optional(v.number()), // When payments should be accepted
     pricePerEntry: v.number(), // in cents
     bundlePrice: v.number(), // in cents
     bundleSize: v.number(),
     productName: v.string(),
     productDescription: v.optional(v.string()),
+    maxWinners: v.optional(v.number()), // Number of winners to select
   },
   handler: async (ctx, { adminToken, ...config }) => {
     // Verify admin authorization

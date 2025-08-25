@@ -29,6 +29,7 @@ function createVerificationHash(
 
 /**
  * Cryptographically secure winner selection from all raffle tickets
+ * Supports selecting multiple winners (up to maxWinners)
  */
 export const selectRaffleWinner = mutation({
   args: {
@@ -50,14 +51,18 @@ export const selectRaffleWinner = mutation({
       throw new Error("No active raffle found");
     }
 
-    // Check if winner already selected
-    const existingWinner = await ctx.db
+    // Check how many winners have already been selected
+    const existingWinners = await ctx.db
       .query("raffleWinners")
       .withIndex("by_raffle", (q) => q.eq("raffleConfigId", activeRaffle._id))
-      .first();
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
 
-    if (existingWinner) {
-      throw new Error("Winner already selected for this raffle");
+    const maxWinners = activeRaffle.maxWinners || 1;
+    const winnersNeeded = maxWinners - existingWinners.length;
+
+    if (winnersNeeded <= 0) {
+      throw new Error(`All ${maxWinners} winner(s) have already been selected for this raffle`);
     }
 
     // Get all tickets in the pool (sorted by ticket number for fairness)
@@ -71,7 +76,7 @@ export const selectRaffleWinner = mutation({
       throw new Error("No tickets in the raffle pool. Create some test entries first or wait for real participants.");
     }
 
-    console.log(`🎲 Starting winner selection from ${allTickets.length} total tickets`);
+    console.log(`🎲 Starting winner selection: selecting winner ${existingWinners.length + 1}/${maxWinners} from ${allTickets.length} total tickets`);
 
     // Validate ticket integrity before selection
     const integrity = await ctx.runQuery(api.raffleTickets.validateTicketIntegrity);
@@ -79,24 +84,23 @@ export const selectRaffleWinner = mutation({
       throw new Error(`Ticket integrity check failed: ${integrity.issues.join(", ")}`);
     }
 
-    // Generate secure random seed for auditing
+    // Get ticket numbers that are already winning tickets (to avoid duplicates)
+    const existingWinningTickets = new Set(existingWinners.map(w => w.winningTicketNumber));
+    const availableTickets = allTickets.filter(ticket => !existingWinningTickets.has(ticket.ticketNumber));
+    
+    if (availableTickets.length === 0) {
+      throw new Error("No available tickets remaining for winner selection");
+    }
+
+    // Generate secure random seed for auditing this selection
     const randomSeed = generateSecureRandomSeed();
     console.log(`🔐 Random seed generated: ${randomSeed}`);
 
-    // Use crypto-secure random number generation
-    // Select a random ticket number (1-indexed to match our ticket numbering)
-    const winningTicketNumber = Math.floor(Math.random() * allTickets.length) + 1;
+    // Select 1 winner from available tickets
+    const randomIndex = Math.floor(Math.random() * availableTickets.length);
+    const winningTicket = availableTickets[randomIndex];
+    const winningTicketNumber = winningTicket.ticketNumber;
     
-    // Get the winning ticket
-    const winningTicket = await ctx.db
-      .query("raffleTickets")
-      .withIndex("by_ticket_number", (q) => q.eq("ticketNumber", winningTicketNumber))
-      .first();
-
-    if (!winningTicket) {
-      throw new Error(`Winning ticket #${winningTicketNumber} not found`);
-    }
-
     // Get the winning entry for additional details
     const winningEntry = await ctx.db.get(winningTicket.entryId);
     if (!winningEntry) {
@@ -111,12 +115,14 @@ export const selectRaffleWinner = mutation({
       winningTicket.email
     );
 
+    const selectedAt = Date.now();
+
     // Record the winner with full audit trail
     const winnerId = await ctx.db.insert("raffleWinners", {
       raffleConfigId: activeRaffle._id,
       winnerEmail: winningTicket.email,
       winnerEntryId: winningEntry._id,
-      selectedAt: Date.now(),
+      selectedAt,
       totalEntriesInPool: allTickets.length,
       winningTicketNumber,
       randomSeed,
@@ -125,11 +131,13 @@ export const selectRaffleWinner = mutation({
       isActive: true,
     });
 
-    // Update raffle config with winner
-    await ctx.db.patch(activeRaffle._id, {
-      winner: winningTicket.email,
-      winnerSelectedAt: Date.now(),
-    });
+    // Update raffle config with the first winner (for backwards compatibility)
+    if (existingWinners.length === 0) {
+      await ctx.db.patch(activeRaffle._id, {
+        winner: winningTicket.email,
+        winnerSelectedAt: selectedAt,
+      });
+    }
 
     // Create admin notification
     try {
@@ -143,7 +151,8 @@ export const selectRaffleWinner = mutation({
       console.error("Failed to send winner notification:", notificationError);
     }
 
-    console.log(`🏆 WINNER SELECTED: ${winningTicket.email} with ticket #${winningTicketNumber} out of ${allTickets.length} total tickets`);
+    const currentWinnerCount = existingWinners.length + 1;
+    console.log(`🏆 WINNER ${currentWinnerCount}/${maxWinners} SELECTED: ${winningTicket.email} with ticket #${winningTicketNumber} out of ${allTickets.length} total tickets`);
 
     return {
       success: true,
@@ -153,7 +162,63 @@ export const selectRaffleWinner = mutation({
       totalTickets: allTickets.length,
       verificationHash,
       randomSeed,
-      selectedAt: Date.now(),
+      selectedAt,
+      winnerNumber: currentWinnerCount,
+      totalWinners: maxWinners,
+      remainingWinners: maxWinners - currentWinnerCount,
+    };
+  },
+});
+
+/**
+ * Get current raffle winner (if any) - returns first winner for backwards compatibility
+ */
+export const getCurrentWinner = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("raffleWinners")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .first();
+  },
+});
+
+/**
+ * Get all winners for the current active raffle
+ */
+export const getAllCurrentWinners = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get current active raffle
+    const activeRaffle = await ctx.db
+      .query("raffleConfig")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .first();
+
+    if (!activeRaffle) {
+      return { winners: [], maxWinners: 1, remainingWinners: 1 };
+    }
+
+    // Get all winners for this raffle
+    const winners = await ctx.db
+      .query("raffleWinners")
+      .withIndex("by_raffle", (q) => q.eq("raffleConfigId", activeRaffle._id))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .order("desc")
+      .collect();
+
+    const maxWinners = activeRaffle.maxWinners || 1;
+    const remainingWinners = maxWinners - winners.length;
+
+    return {
+      winners,
+      maxWinners,
+      remainingWinners,
+      raffleConfig: {
+        name: activeRaffle.name,
+        productName: activeRaffle.productName,
+        totalEntries: activeRaffle.totalEntries,
+      },
     };
   },
 });
@@ -201,19 +266,6 @@ export const verifyWinnerSelection = query({
       winnerTicketNumbers: allWinnerTickets.map(t => t.ticketNumber).sort((a, b) => a - b),
       winningProbability: (allWinnerTickets.length / winner.totalEntriesInPool) * 100,
     };
-  },
-});
-
-/**
- * Get current raffle winner (if any)
- */
-export const getCurrentWinner = query({
-  args: {},
-  handler: async (ctx) => {
-    return await ctx.db
-      .query("raffleWinners")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .first();
   },
 });
 

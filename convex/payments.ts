@@ -38,9 +38,13 @@ export const createPendingEntry = mutation({
       throw new Error("No active raffle found");
     }
 
-    // Check if raffle is accepting entries
+    // Check if raffle is accepting entries (use paymentStartDate for payments)
     const now = Date.now();
-    if (now < activeRaffle.startDate || now > activeRaffle.endDate) {
+    const paymentStart = activeRaffle.paymentStartDate || activeRaffle.startDate;
+    
+    // For payments: check paymentStartDate vs endDate
+    // This allows payments to work even if timer hasn't started yet
+    if (now < paymentStart || now > activeRaffle.endDate) {
       throw new Error("Raffle is not currently accepting entries");
     }
 
@@ -303,6 +307,7 @@ export const getRaffleConfig = query({
       name: raffle.name,
       startDate: raffle.startDate,
       endDate: raffle.endDate,
+      timerDisplayDate: raffle.timerDisplayDate, // For frontend timer display
       isActive: raffle.isActive,
       totalEntries: raffle.totalEntries,
       pricePerEntry: raffle.pricePerEntry,
@@ -311,6 +316,7 @@ export const getRaffleConfig = query({
       productName: raffle.productName,
       productDescription: raffle.productDescription,
       hasWinner: !!raffle.winner,
+      maxWinners: raffle.maxWinners || 1,
     };
   },
 });

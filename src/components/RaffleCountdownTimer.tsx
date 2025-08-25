@@ -34,6 +34,21 @@ export function RaffleCountdownTimer({ className }: { className?: string }) {
 
     const updateTimer = () => {
       const now = Date.now();
+      const timerStart = raffleConfig.timerDisplayDate || raffleConfig.startDate;
+      
+      // If timer hasn't started yet, show time until it starts
+      if (now < timerStart) {
+        const timeToStart = timerStart - now;
+        const seconds = Math.floor((timeToStart / 1000) % 60);
+        const minutes = Math.floor((timeToStart / 1000 / 60) % 60);
+        const hours = Math.floor((timeToStart / (1000 * 60 * 60)) % 24);
+        const days = Math.floor(timeToStart / (1000 * 60 * 60 * 24));
+        
+        setTimeRemaining({ days, hours, minutes, seconds, total: timeToStart });
+        return;
+      }
+      
+      // Timer has started, show time until end
       const total = raffleConfig.endDate - now;
 
       if (total <= 0) {
@@ -67,8 +82,11 @@ export function RaffleCountdownTimer({ className }: { className?: string }) {
     );
   }
 
+  const now = Date.now();
+  const timerStart = raffleConfig.timerDisplayDate || raffleConfig.startDate;
+  const isTimerStarted = now >= timerStart;
   const isActive = raffleConfig.isActive && timeRemaining.total > 0;
-  const hasEnded = timeRemaining.total <= 0;
+  const hasEnded = timeRemaining.total <= 0 && isTimerStarted;
 
   if (hasEnded) {
     return (
@@ -91,6 +109,23 @@ export function RaffleCountdownTimer({ className }: { className?: string }) {
       <div className={`flex items-center gap-2 text-black/70 ${className || ''}`}>
         <span className="text-lg">⏸️</span>
         <span className="text-sm font-medium">Raffle Inactive</span>
+      </div>
+    );
+  }
+
+  // Show "Starts Soon" if timer hasn't started yet but payments are accepted
+  if (!isTimerStarted) {
+    return (
+      <div className={`flex items-center gap-2 text-black ${className || ''}`}>
+        <div className="flex items-center gap-1">
+          <span className="text-base sm:text-lg animate-pulse">🌟</span>
+          <span className="text-xs sm:text-sm font-medium text-black">
+            Starts Soon
+          </span>
+        </div>
+        <div className="text-xs bg-yellow-500/10 text-yellow-700 px-2 py-1 rounded-full">
+          Aug 31st
+        </div>
       </div>
     );
   }

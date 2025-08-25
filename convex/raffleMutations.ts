@@ -28,6 +28,8 @@ export const updateRaffleConfig = mutation({
     name: v.optional(v.string()),
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
+    timerDisplayDate: v.optional(v.number()),
+    paymentStartDate: v.optional(v.number()),
     pricePerEntry: v.optional(v.number()),
     bundlePrice: v.optional(v.number()),
     bundleSize: v.optional(v.number()),
@@ -35,6 +37,7 @@ export const updateRaffleConfig = mutation({
     productDescription: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
     totalEntries: v.optional(v.number()),
+    maxWinners: v.optional(v.number()),
   },
   handler: async (ctx, { raffleId, ...updates }) => {
     // Remove undefined values
@@ -53,11 +56,14 @@ export const createRaffleConfig = mutation({
     name: v.string(),
     startDate: v.number(),
     endDate: v.number(),
+    timerDisplayDate: v.optional(v.number()),
+    paymentStartDate: v.optional(v.number()),
     pricePerEntry: v.number(),
     bundlePrice: v.number(),
     bundleSize: v.number(),
     productName: v.string(),
     productDescription: v.optional(v.string()),
+    maxWinners: v.optional(v.number()),
   },
   handler: async (ctx, config) => {
     return await ctx.db.insert("raffleConfig", {

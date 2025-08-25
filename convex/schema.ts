@@ -42,8 +42,10 @@ export default defineSchema({
   // Raffle configuration
   raffleConfig: defineTable({
     name: v.string(),
-    startDate: v.number(),
-    endDate: v.number(),
+    startDate: v.number(), // When raffle starts accepting entries
+    endDate: v.number(), // When raffle ends
+    timerDisplayDate: v.optional(v.number()), // When timer should start counting down (for display purposes)
+    paymentStartDate: v.optional(v.number()), // When payments should be accepted (defaults to startDate)
     isActive: v.boolean(),
     totalEntries: v.number(),
     winner: v.optional(v.string()), // Email of winner
@@ -53,6 +55,7 @@ export default defineSchema({
     bundleSize: v.number(),
     productName: v.string(),
     productDescription: v.optional(v.string()),
+    maxWinners: v.optional(v.number()), // Number of winners to select (default: 1)
   }).index("by_active", ["isActive"]),
 
   // Raffle winner history with full audit trail

@@ -45,7 +45,9 @@ export const addEntries = mutation({
     }
 
     const now = Date.now();
-    if (now < activeRaffle.startDate || now > activeRaffle.endDate) {
+    // Use paymentStartDate for payment validation, startDate for timer display
+    const paymentStart = activeRaffle.paymentStartDate || activeRaffle.startDate;
+    if (now < paymentStart || now > activeRaffle.endDate) {
       throw new Error("Raffle is not currently accepting entries");
     }
 

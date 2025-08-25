@@ -32,9 +32,15 @@ export const createCheckoutSession: any = action({
       throw new Error("No active raffle found");
     }
 
-    // Check if raffle is accepting entries
+    // Check if raffle is accepting entries (use paymentStartDate for payments)
     const now = Date.now();
-    if (now < raffle.startDate || now > raffle.endDate) {
+    // Use internal config to access paymentStartDate
+    const raffleInternal = await ctx.runQuery(api.payments.getRaffleConfigInternal);
+    const paymentStart = raffleInternal?.paymentStartDate || raffle.startDate;
+    
+    // For payments: check paymentStartDate vs endDate
+    // This allows payments to work even if timer display hasn't started yet
+    if (now < paymentStart || now > raffle.endDate) {
       throw new Error("Raffle is not currently accepting entries");
     }
 

@@ -20,6 +20,12 @@ export default function UltraSecureAdminDashboard() {
   const adminLogout = useMutation(api.adminAuth.adminLogout);
   const selectWinner = useMutation(api.winnerSelection.selectRaffleWinner);
   const resetSecurity = useMutation(api.adminAuth.resetAdminSecurity);
+  
+  // Winner data
+  const winnersData = useQuery(
+    api.winnerSelection.getAllCurrentWinners,
+    sessionToken && isAuthenticated ? {} : "skip"
+  );
 
   // Authenticated queries
   const entries = useQuery(
@@ -32,10 +38,6 @@ export default function UltraSecureAdminDashboard() {
     sessionToken ? {} : "skip"
   );
   
-  const leads = useQuery(
-    api.leads.getAllLeads,
-    sessionToken ? { limit: 100 } : "skip"
-  );
   
   const raffleConfig = useQuery(api.payments.getRaffleConfig);
   const securityLogs = useQuery(
@@ -433,10 +435,11 @@ export default function UltraSecureAdminDashboard() {
                   <p>• Complete audit trail will be created</p>
                   <p>• Verification hash ensures authenticity</p>
                   <p>• This operation is irreversible</p>
+                  <p>• This raffle supports {raffleConfig?.maxWinners || 1} winner{(raffleConfig?.maxWinners || 1) > 1 ? 's' : ''}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div className="bg-gray-50 p-4 rounded-lg text-center">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Ticket Pool</h4>
                   <p className="text-3xl font-bold text-gray-900">{totalEntries}</p>
@@ -448,10 +451,17 @@ export default function UltraSecureAdminDashboard() {
                   <p className="text-sm text-gray-500">unique players</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg text-center">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Winners Selected</h4>
+                  <p className="text-3xl font-bold text-gray-900">{winnersData?.winners.length || 0}</p>
+                  <p className="text-sm text-gray-500">of {raffleConfig?.maxWinners || 1}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg text-center">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Status</h4>
                   <p className="text-lg font-medium">
-                    {raffleConfig?.hasWinner ? (
-                      <span className="text-green-600">Winner Selected</span>
+                    {winnersData && winnersData.winners.length >= (raffleConfig?.maxWinners || 1) ? (
+                      <span className="text-green-600">Complete</span>
+                    ) : winnersData && winnersData.winners.length > 0 ? (
+                      <span className="text-blue-600">Partial</span>
                     ) : (
                       <span className="text-yellow-600">Pending</span>
                     )}
@@ -459,13 +469,56 @@ export default function UltraSecureAdminDashboard() {
                 </div>
               </div>
 
-              {!raffleConfig?.hasWinner && (
+              {/* Current Winners Display */}
+              {winnersData && winnersData.winners.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                  <h4 className="font-medium text-green-800 mb-4">🏆 Selected Winners</h4>
+                  <div className="space-y-4">
+                    {winnersData.winners.map((winner, index) => (
+                      <div key={winner._id} className="bg-white border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-medium text-gray-900">Winner #{index + 1}</h5>
+                            <p className="text-sm text-gray-600">{winner.winnerEmail}</p>
+                            <p className="text-xs text-gray-500">Ticket #{winner.winningTicketNumber}</p>
+                            <p className="text-xs text-gray-500 font-mono">
+                              Hash: {winner.verificationHash.substring(0, 16)}...
+                            </p>
+                          </div>
+                          <div className="text-right text-xs text-gray-500">
+                            <p>Selected: {new Date(winner.selectedAt).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Winner Selection Button */}
+              {winnersData && winnersData.remainingWinners > 0 ? (
                 <button 
                   onClick={handleWinnerSelection}
                   disabled={totalEntries === 0 || loading}
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
                 >
-                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
+                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : 
+                   `Select Winner #${(winnersData?.winners.length || 0) + 1} (${winnersData?.remainingWinners} remaining)`}
+                </button>
+              ) : winnersData && winnersData.remainingWinners === 0 ? (
+                <div className="text-center py-4">
+                  <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                    <span className="text-lg mr-2">🎉</span>
+                    All winners have been selected!
+                  </div>
+                </div>
+              ) : (
+                <button 
+                  onClick={handleWinnerSelection}
+                  disabled={totalEntries === 0 || loading}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
+                >
+                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select First Winner"}
                 </button>
               )}
             </div>
