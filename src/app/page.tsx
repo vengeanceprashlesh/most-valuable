@@ -156,12 +156,15 @@ export default function Home() {
                 </button>
                 <div className="text-center space-y-3">
                   <div className="bg-black/30 backdrop-blur border border-white/20 rounded-lg p-4">
-                    <p className="text-yellow-300 font-semibold text-sm mb-2">🏆 Gold Rush Raffle Entry!</p>
+                    <p className="text-yellow-300 font-semibold text-sm mb-3">🏆 Gold Rush Giveaway</p>
                     <p className="text-white/90 text-xs leading-relaxed mb-3">
-                      Subscribe for <span className="text-yellow-300 font-semibold">free entry</span> to the Gold Rush raffle—1 winner will be selected to receive a limited edition shirt!
+                      Subscribe for <span className="text-yellow-300 font-semibold">FREE</span> to claim 1 entry into the Gold Rush Giveaway. 1 winner will receive a 1 of 1 shirt.
+                    </p>
+                    <p className="text-white/80 text-xs leading-relaxed mb-3">
+                      Want better odds? You can purchase extra entries for <span className="text-green-300 font-semibold">$50 each</span>.
                     </p>
                     <p className="text-white/80 text-xs leading-relaxed">
-                      Want extra chances to win? Purchase additional entries for <span className="text-green-300 font-semibold">$50 each</span>. Winners who also purchased additional entries will receive the first ever shirt backed by <span className="text-yellow-300 font-semibold">1/4oz of gold</span> making history as the first of its kind!
+                      If the winner purchased at least one paid entry, they will receive the first-ever shirt backed by <span className="text-yellow-300 font-semibold">¼ oz of real gold</span> — making history as the first of its kind.
                     </p>
                   </div>
                   <p className="text-[10px] text-white/60">
