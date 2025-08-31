@@ -39,10 +39,16 @@ export const updateRaffleConfig = mutation({
     totalEntries: v.optional(v.number()),
     maxWinners: v.optional(v.number()),
   },
-  handler: async (ctx, { raffleId, ...updates }) => {
+  handler: async (ctx, { raffleId, maxWinners, ...updates }) => {
+    // Enforce maxWinners to be 1 for single winner system
+    const finalUpdates = {
+      ...updates,
+      ...(maxWinners !== undefined && { maxWinners: 1 }),
+    };
+    
     // Remove undefined values
     const cleanUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([_, value]) => value !== undefined)
+      Object.entries(finalUpdates).filter(([_, value]) => value !== undefined)
     );
     return await ctx.db.patch(raffleId, cleanUpdates);
   },
@@ -70,6 +76,7 @@ export const createRaffleConfig = mutation({
       ...config,
       isActive: true,
       totalEntries: 0,
+      maxWinners: 1, // Always enforce single winner
     });
   },
 });

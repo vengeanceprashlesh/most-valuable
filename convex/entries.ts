@@ -34,6 +34,20 @@ export const addEntries = mutation({
       throw new Error("Invalid amount. Must be non-negative.");
     }
 
+    // For free entries (amount = 0), check if user already has a free entry
+    if (args.amount === 0) {
+      const existingFreeEntry = await ctx.db
+        .query("entries")
+        .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase()))
+        .filter((q) => q.eq(q.field("amount"), 0))
+        .filter((q) => q.eq(q.field("paymentStatus"), "completed"))
+        .first();
+      
+      if (existingFreeEntry) {
+        throw new Error("User already has a free raffle entry. Only one free entry per email is allowed.");
+      }
+    }
+
     // Check if raffle is still active
     const activeRaffle = await ctx.db
       .query("raffleConfig")
@@ -67,6 +81,39 @@ export const addEntries = mutation({
     }
 
     return entryId;
+  },
+});
+
+/**
+ * Delete a specific entry by ID (admin only)
+ */
+export const deleteEntry = mutation({
+  args: {
+    entryId: v.id("entries"),
+    adminToken: v.string(),
+  },
+  handler: async (ctx, { entryId, adminToken }) => {
+    if (adminToken !== "mvr-admin-2025-secure-token") {
+      throw new Error("Unauthorized");
+    }
+    
+    const entry = await ctx.db.get(entryId);
+    if (!entry) {
+      throw new Error("Entry not found");
+    }
+    
+    await ctx.db.delete(entryId);
+    console.log(`🗑️ Deleted entry: ${entry.email} - ${entryId}`);
+    
+    return {
+      success: true,
+      deletedEntry: {
+        id: entryId,
+        email: entry.email,
+        count: entry.count,
+        amount: entry.amount
+      }
+    };
   },
 });
 
@@ -212,6 +259,53 @@ export const getRaffleStats = query({
       totalPurchases: completedEntries.length,
       bundlePurchases,
       averageEntriesPerPurchase: completedEntries.length > 0 ? totalEntries / completedEntries.length : 0
+    };
+  },
+});
+
+/**
+ * Admin function to clean up duplicate free entries
+ * Keeps the oldest entry for each email and removes newer duplicates
+ */
+export const cleanupDuplicateFreeEntries = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all free entries
+    const allEntries = await ctx.db.query("entries").collect();
+    const freeEntries = allEntries.filter(entry => entry.amount === 0 && entry.paymentStatus === "completed");
+    
+    // Group by email
+    const emailGroups: Record<string, typeof freeEntries> = {};
+    freeEntries.forEach(entry => {
+      const email = entry.email.toLowerCase();
+      if (!emailGroups[email]) {
+        emailGroups[email] = [];
+      }
+      emailGroups[email].push(entry);
+    });
+    
+    // Find and clean duplicates
+    const duplicates = Object.entries(emailGroups).filter(([email, entries]) => entries.length > 1);
+    let removedCount = 0;
+    
+    for (const [email, entries] of duplicates) {
+      // Sort by creation time (oldest first)
+      entries.sort((a, b) => a.createdAt - b.createdAt);
+      
+      // Keep the first (oldest), remove the rest
+      const toRemove = entries.slice(1);
+      
+      for (const entry of toRemove) {
+        await ctx.db.delete(entry._id);
+        removedCount++;
+        console.log(`🗑️ Removed duplicate free entry for ${email}: ${entry._id}`);
+      }
+    }
+    
+    return {
+      duplicateEmailsFound: duplicates.length,
+      entriesRemoved: removedCount,
+      cleanedEmails: duplicates.map(([email]) => email)
     };
   },
 });

@@ -58,11 +58,12 @@ export const selectRaffleWinner = mutation({
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
 
-    const maxWinners = activeRaffle.maxWinners || 1;
+    // Enforce single winner system - always only 1 winner allowed
+    const maxWinners = 1;
     const winnersNeeded = maxWinners - existingWinners.length;
 
     if (winnersNeeded <= 0) {
-      throw new Error(`All ${maxWinners} winner(s) have already been selected for this raffle`);
+      throw new Error(`Winner has already been selected for this raffle`);
     }
 
     // Get all tickets in the pool (sorted by ticket number for fairness)
@@ -207,7 +208,8 @@ export const getAllCurrentWinners = query({
       .order("desc")
       .collect();
 
-    const maxWinners = activeRaffle.maxWinners || 1;
+    // Enforce single winner system
+    const maxWinners = 1;
     const remainingWinners = maxWinners - winners.length;
 
     return {

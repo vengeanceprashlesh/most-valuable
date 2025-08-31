@@ -28,6 +28,7 @@ import type * as raffleTesting from "../raffleTesting.js";
 import type * as raffleTickets from "../raffleTickets.js";
 import type * as robustSync from "../robustSync.js";
 import type * as stripeActions from "../stripeActions.js";
+import type * as testDataCleanup from "../testDataCleanup.js";
 import type * as utils from "../utils.js";
 import type * as winnerSelection from "../winnerSelection.js";
 
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   raffleTickets: typeof raffleTickets;
   robustSync: typeof robustSync;
   stripeActions: typeof stripeActions;
+  testDataCleanup: typeof testDataCleanup;
   utils: typeof utils;
   winnerSelection: typeof winnerSelection;
 }>;

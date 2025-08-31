@@ -435,7 +435,7 @@ export default function UltraSecureAdminDashboard() {
                   <p>• Complete audit trail will be created</p>
                   <p>• Verification hash ensures authenticity</p>
                   <p>• This operation is irreversible</p>
-                  <p>• This raffle supports {raffleConfig?.maxWinners || 1} winner{(raffleConfig?.maxWinners || 1) > 1 ? 's' : ''}</p>
+                  <p>• This raffle supports 1 winner</p>
                 </div>
               </div>
 
@@ -502,14 +502,13 @@ export default function UltraSecureAdminDashboard() {
                   disabled={totalEntries === 0 || loading}
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
                 >
-                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : 
-                   `Select Winner #${(winnersData?.winners.length || 0) + 1} (${winnersData?.remainingWinners} remaining)`}
+                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
                 </button>
               ) : winnersData && winnersData.remainingWinners === 0 ? (
                 <div className="text-center py-4">
                   <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
                     <span className="text-lg mr-2">🎉</span>
-                    All winners have been selected!
+                    Winner has been selected!
                   </div>
                 </div>
               ) : (
@@ -518,7 +517,7 @@ export default function UltraSecureAdminDashboard() {
                   disabled={totalEntries === 0 || loading}
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
                 >
-                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select First Winner"}
+                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
                 </button>
               )}
             </div>

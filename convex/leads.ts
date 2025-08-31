@@ -36,7 +36,20 @@ export const addLead = mutation({
         }
         await ctx.db.patch(existing._id, { phone });
       }
-      return existing._id;
+      
+      // Check if existing user already has a free entry
+      const hasExistingFreeEntry = await ctx.db
+        .query("entries")
+        .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+        .filter((q) => q.eq(q.field("amount"), 0))
+        .filter((q) => q.eq(q.field("paymentStatus"), "completed"))
+        .first();
+      
+      return { 
+        leadId: existing._id, 
+        isNewLead: false,
+        alreadyHasFreeEntry: !!hasExistingFreeEntry
+      };
     }
 
     // Validate phone format if provided (International E.164)
@@ -58,7 +71,7 @@ export const addLead = mutation({
       createdAt: now
     });
 
-    // Also create a free raffle entry for the lead
+    // Create a free raffle entry ONLY for NEW leads (not existing ones)
     try {
       await ctx.runMutation(api.entries.addEntries, {
         email: email.toLowerCase(),
@@ -69,14 +82,18 @@ export const addLead = mutation({
         ipAddress,
         bundle: false
       });
-      console.log(`✅ Created free raffle entry for ${email.toLowerCase()}`);
+      console.log(`✅ Created free raffle entry for NEW lead: ${email.toLowerCase()}`);
     } catch (entryError) {
       // Log error but don't fail the lead creation
       console.error(`Failed to create free entry for ${email}:`, entryError);
       // Still return the lead ID since lead was created successfully
     }
 
-    return leadId;
+    return { 
+      leadId, 
+      isNewLead: true,
+      alreadyHasFreeEntry: false
+    };
   },
 });
 
@@ -142,5 +159,22 @@ export const getLeadsByDateRange = query({
         q.gte("createdAt", startDate).lte("createdAt", endDate)
       )
       .collect();
+  },
+});
+
+/**
+ * Check if an email already has a free raffle entry
+ */
+export const hasExistingFreeEntry = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const freeEntry = await ctx.db
+      .query("entries")
+      .withIndex("by_email", (q) => q.eq("email", email.toLowerCase()))
+      .filter((q) => q.eq(q.field("amount"), 0))
+      .filter((q) => q.eq(q.field("paymentStatus"), "completed"))
+      .first();
+    
+    return !!freeEntry;
   },
 });

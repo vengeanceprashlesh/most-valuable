@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,8 @@ export default function Home() {
   const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showAlreadySubscribed, setShowAlreadySubscribed] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(true);
   const [redirectCountdown, setRedirectCountdown] = useState(0);
   
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function Home() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
-    if (showSuccess && redirectCountdown > 0) {
+    if ((showSuccess || showAlreadySubscribed) && redirectCountdown > 0) {
       interval = setInterval(() => {
         setRedirectCountdown(prev => prev - 1);
       }, 1000);
@@ -32,18 +34,18 @@ export default function Home() {
         clearInterval(interval);
       }
     };
-  }, [showSuccess, redirectCountdown]);
+  }, [showSuccess, showAlreadySubscribed, redirectCountdown]);
 
   // Separate effect to handle redirect when countdown reaches 0
   useEffect(() => {
-    if (showSuccess && redirectCountdown === 0) {
+    if ((showSuccess || showAlreadySubscribed) && redirectCountdown === 0) {
       const timeoutId = setTimeout(() => {
         router.push('/shop');
       }, 100); // Small delay to ensure state updates are complete
       
       return () => clearTimeout(timeoutId);
     }
-  }, [showSuccess, redirectCountdown, router]);
+  }, [showSuccess, showAlreadySubscribed, redirectCountdown, router]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +53,29 @@ export default function Home() {
 
     setIsSubmitting(true);
     try {
-      await addLead({
+      const result = await addLead({
         email: email.toLowerCase().trim(),
         phone: phone.trim() || undefined,
         source: "landing_page"
       });
       
-      setShowSuccess(true);
+      // Handle different scenarios based on response
+      if (result.isNewLead) {
+        // New user - they got a free entry
+        setIsNewUser(true);
+        setShowSuccess(true);
+      } else {
+        // Existing user
+        setIsNewUser(false);
+        if (result.alreadyHasFreeEntry) {
+          // Already has free entry - show different message
+          setShowAlreadySubscribed(true);
+        } else {
+          // Shouldn't happen, but handle gracefully
+          setShowSuccess(true);
+        }
+      }
+      
       setEmail("");
       setPhone("");
       
@@ -119,7 +137,7 @@ export default function Home() {
             {/* Removed tagline and highlight to keep a clean hero with large MV logo */}
 
             {/* Form */}
-            {!showSuccess ? (
+            {!showSuccess && !showAlreadySubscribed ? (
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <input
                   type="email"
@@ -140,7 +158,7 @@ export default function Home() {
                   <div className="bg-black/30 backdrop-blur border border-white/20 rounded-lg p-4">
                     <p className="text-yellow-300 font-semibold text-sm mb-2">🏆 Gold Rush Raffle Entry!</p>
                     <p className="text-white/90 text-xs leading-relaxed mb-3">
-                      Subscribe for <span className="text-yellow-300 font-semibold">free entry</span> to the Gold Rush raffle—2 people have a chance to win 1 limited edition shirt!
+                      Subscribe for <span className="text-yellow-300 font-semibold">free entry</span> to the Gold Rush raffle—1 winner will be selected to receive a limited edition shirt!
                     </p>
                     <p className="text-white/80 text-xs leading-relaxed">
                       Want extra chances to win? Purchase additional entries for <span className="text-green-300 font-semibold">$50 each</span>. Winners who also purchased additional entries will receive the first ever shirt backed by <span className="text-yellow-300 font-semibold">1/4oz of gold</span> making history as the first of its kind!
@@ -151,16 +169,16 @@ export default function Home() {
                   </p>
                 </div>
               </form>
-            ) : (
+            ) : showSuccess ? (
               <div className="text-center p-6 bg-green-500/20 backdrop-blur border border-green-400/50 rounded-xl mb-4">
                 <div className="text-green-400 font-semibold text-lg mb-2">✅ You&apos;re In The Raffle!</div>
                 <p className="text-white/90 text-sm mb-2">You&apos;ve been successfully added to our waitlist!</p>
                 <div className="bg-white/10 rounded-lg p-2 mb-3">
                   <p className="text-yellow-300 text-sm font-medium">
-                    🎫 Free Entry Added!
+                    🎫 {isNewUser ? 'Free Entry Added!' : 'Already In The Raffle!'}
                   </p>
                   <p className="text-white/80 text-xs">
-                    You now have 1 raffle entry
+                    {isNewUser ? 'You now have 1 raffle entry' : 'You already have your free raffle entry'}
                   </p>
                 </div>
                 {redirectCountdown > 0 && (
@@ -179,6 +197,50 @@ export default function Home() {
                       onClick={() => {
                         setRedirectCountdown(0);
                         setShowSuccess(false);
+                      }}
+                      className="text-xs text-white/60 hover:text-white underline transition-colors"
+                    >
+                      Cancel redirect
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center p-6 bg-blue-500/20 backdrop-blur border border-blue-400/50 rounded-xl mb-4">
+                <div className="text-blue-400 font-semibold text-lg mb-2">👋 Welcome Back!</div>
+                <p className="text-white/90 text-sm mb-2">You&apos;re already subscribed to our waitlist!</p>
+                <div className="bg-white/10 rounded-lg p-2 mb-3">
+                  <p className="text-yellow-300 text-sm font-medium">
+                    🎫 You Already Have Your Free Entry!
+                  </p>
+                  <p className="text-white/80 text-xs">
+                    Only one free entry per email is allowed
+                  </p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20">
+                  <p className="text-white/90 text-sm mb-2">
+                    💡 Want more chances to win?
+                  </p>
+                  <p className="text-white/80 text-xs">
+                    Purchase additional entries for <span className="text-green-300 font-semibold">$50 each</span> in our shop!
+                  </p>
+                </div>
+                {redirectCountdown > 0 && (
+                  <div className="bg-white/10 rounded-lg p-3 border border-white/20 mt-3">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+                      <span className="text-white/80 text-sm">Taking you to shop...</span>
+                    </div>
+                    <div className="text-white font-mono text-xl">
+                      {redirectCountdown}
+                    </div>
+                    <div className="text-white/60 text-xs mt-1 mb-2">
+                      Redirecting in {redirectCountdown} second{redirectCountdown !== 1 ? 's' : ''}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setRedirectCountdown(0);
+                        setShowAlreadySubscribed(false);
                       }}
                       className="text-xs text-white/60 hover:text-white underline transition-colors"
                     >
