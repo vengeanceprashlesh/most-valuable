@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Most Valuable — E‑commerce",
+  title: "Most Valuable Official Store",
   applicationName: "Most Valuable",
   description: "Timeless pieces for modern living. Join the waitlist.",
   icons: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     apple: "/icon.png",
   },
   openGraph: {
-    title: "Most Valuable — E‑commerce",
+    title: "Most Valuable Official Store",
     description: "Timeless pieces for modern living. Join the waitlist.",
     url: "https://www.mostvaluableco.com/",
     siteName: "Most Valuable",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Most Valuable — E‑commerce",
+    title: "Most Valuable Official Store",
     description: "Timeless pieces for modern living. Join the waitlist.",
     images: ["/thumbnail.png"],
   },
