@@ -64,10 +64,13 @@ function Media({ src, alt, className = "" }: { src: string; alt: string; classNa
 }
 
 export default function ShopPage() {
-  // Track selected variant per product (tees 1-3)
+  // Track selected variant per product
   const initial: VariantState = useMemo(() => {
-    // Preselect Black for Members Only Tee (p3) so its button is active by default
-    return { p3: "p3b" };
+    // Preselect Black variants for products with variants
+    return { 
+      "mv-hoodie": "mv-hoodie-blk", // MV Members Only Hoodie
+      "mv-tee": "mv-tee-blk" // MV Members Only Tee
+    };
   }, []);
   const [selected, setSelected] = useState<VariantState>(initial);
   const [loadingQty, setLoadingQty] = useState<number | null>(null);
@@ -150,6 +153,10 @@ export default function ShopPage() {
                               className={
                                 p.id === "raffle"
                                   ? "scale-[1.7] md:scale-[1.3] object-[50%_60%] sm:object-center"
+                                  : p.id === "mv-hoodie"
+                                  ? "scale-[1.4] md:scale-[1.2] object-center"
+                                  : p.id === "mv-tee"
+                                  ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
                                   : p.id === "p6"
                                   ? "scale-[1.7] md:scale-[1.4]"
                                   : p.id === "p7"
@@ -238,7 +245,7 @@ export default function ShopPage() {
                 {p.status === "available" && (
                   p.id === "raffle" ? (
                     <>
-                      {/* Mobile: tag-style pricing options */}
+                      {/* Mobile: tag-style pricing options for raffle */}
                       <div className="mt-3 sm:hidden flex justify-center gap-2">
                         <button
                           type="button"
@@ -265,7 +272,7 @@ export default function ShopPage() {
                           {loadingQty === 4 ? "Loading..." : "+4 — $100"}
                         </button>
                       </div>
-                      {/* Desktop/tablet: keep two buttons */}
+                      {/* Desktop/tablet: raffle entry buttons */}
                       <div className="hidden sm:mt-4 sm:grid sm:grid-cols-2 sm:gap-2">
                         <button
                           onClick={(e) => {
@@ -291,42 +298,21 @@ export default function ShopPage() {
                     </>
                   ) : (
                     <>
-                      {/* Mobile: simple hyperlink-like CTA for other products too */}
+                      {/* Mobile: simple price display for direct purchase products */}
                       <div className="mt-3 sm:hidden flex justify-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setLoadingQty(1);
-                            handleBuyClick(1);
-                          }}
-                          className="text-black underline text-sm font-medium"
-                        >
-                          Buy -&gt;
-                        </button>
+                        <span className="text-sm font-medium text-gray-900">{p.price}</span>
                       </div>
-                      {/* Desktop: keep two buttons */}
-                      <div className="hidden sm:mt-4 sm:grid sm:grid-cols-2 sm:gap-2">
+                      {/* Desktop: single buy button for direct purchase */}
+                      <div className="hidden sm:mt-4 sm:block">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setLoadingQty(1);
-                            handleBuyClick(1);
+                            // For direct purchase products, redirect to their individual product page
+                            window.location.href = `/product/${p.slug}`;
                           }}
-                          className="rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
+                          className="w-full rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
                         >
-                          {loadingQty === 1 ? "Redirecting…" : "+1 entry — $50"}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLoadingQty(4);
-                            handleBuyClick(4);
-                          }}
-                          className="rounded-full border border-gray-300 bg-gray-100 px-5 py-3 text-sm font-medium text-black transition hover:bg-gray-200"
-                        >
-                          {loadingQty === 4 ? "Redirecting…" : "+4 entries — $100"}
+                          Buy {p.price}
                         </button>
                       </div>
                     </>

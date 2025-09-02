@@ -19,8 +19,21 @@ export const createPendingEntry = mutation({
     variantId: v.optional(v.string()),
     selectedColor: v.optional(v.string()),
     selectedSize: v.optional(v.string()),
+    // Shipping address
+    shippingAddress: v.optional(v.object({
+      firstName: v.string(),
+      lastName: v.string(),
+      company: v.optional(v.string()),
+      address1: v.string(),
+      address2: v.optional(v.string()),
+      city: v.string(),
+      state: v.string(),
+      postalCode: v.string(),
+      country: v.string(),
+      phone: v.optional(v.string()),
+    })),
   },
-  handler: async (ctx, { email, phone, count, bundle, stripeSessionId, ipAddress, productId, variantId, selectedColor, selectedSize }) => {
+  handler: async (ctx, { email, phone, count, bundle, stripeSessionId, ipAddress, productId, variantId, selectedColor, selectedSize, shippingAddress }) => {
     // Normalize optional email
     const normalizedEmail = email ? email.toLowerCase() : "";
 
@@ -71,6 +84,8 @@ export const createPendingEntry = mutation({
       variantId,
       variantColor: selectedColor,
       size: selectedSize,
+      // Address information (only stored after successful payment)
+      shippingAddress,
       createdAt: now,
     });
   },

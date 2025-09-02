@@ -27,7 +27,38 @@ export const products: Product[] = [
       { id: "raffle-wht", color: "White", media: ["/mainProduct-white.png"] },
     ],
   },
-  // Coming soon products in positions 2 and 3
+  // MV Members Only Hoodie - Direct Purchase Product
+  {
+    id: "mv-hoodie",
+    name: "MV Members Only Hoodie",
+    slug: "mv-members-only-hoodie",
+    status: "available",
+    category: "hoodie",
+    price: "$300",
+    description: "Premium Members Only Hoodie crafted for exclusivity and comfort. Direct purchase - no raffle, no tickets, just pure style.",
+    media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"],
+    variants: [
+      { id: "mv-hoodie-blk", color: "Black", media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"] },
+      { id: "mv-hoodie-wht", color: "White", media: ["/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-b.png", "/MV Members only hoodie-g.png"] },
+      { id: "mv-hoodie-gry", color: "Gray", media: ["/MV Members only hoodie-g.png", "/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg"] },
+    ],
+  },
+  // Members Only Tee - Direct Purchase Product (Position 3)
+  {
+    id: "mv-tee",
+    name: "Members Only Tee",
+    slug: "mv-members-only-tee",
+    status: "available",
+    category: "tee",
+    price: "$175",
+    description: "Exclusive Members Only Tee crafted for comfort and style. Quality 8oz shirt.",
+    media: ["/media/3A Valuable Shirt-memb1.jpeg", "/media/3A Valuable Shirt-memw1.jpeg"],
+    variants: [
+      { id: "mv-tee-blk", color: "Black", media: ["/media/3A Valuable Shirt-memb1.jpeg", "/media/3A Valuable Shirt-memw1.jpeg"] },
+      { id: "mv-tee-wht", color: "White", media: ["/media/3A Valuable Shirt-memw1.jpeg", "/media/3A Valuable Shirt-memb1.jpeg"] },
+    ],
+  },
+  // Coming soon products
   {
     "id": "p6",
     "name": "Most Valuable Box Logo Hoodie",
@@ -64,20 +95,6 @@ export const products: Product[] = [
     "category": "tee",
     "price": "$250",
     "media": ["/media/1A Valuable Shirt-w1.png", "/media/2A Valuable Shirt2.png"]
-  },
-  {
-    id: "p3",
-    name: "Members Only Tee",
-    slug: "members-only-tee-black",
-    status: "sold_out",
-    category: "tee",
-    price: "$250",
-    // default media (black) if no variant selected
-    media: ["/media/3A Valuable Shirt-memb1.jpeg"],
-    variants: [
-      { id: "p3b", color: "Black", media: ["/media/3A Valuable Shirt-memb1.jpeg"] },
-      { id: "p3w", color: "White", media: ["/media/3A Valuable Shirt-memw1.jpeg"] },
-    ],
   },
   {
     "id": "p4",

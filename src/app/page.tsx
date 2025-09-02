@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,7 +49,7 @@ export default function Home() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !phone.trim()) return;
 
     setIsSubmitting(true);
     try {
@@ -139,12 +139,27 @@ export default function Home() {
             {/* Form */}
             {!showSuccess && !showAlreadySubscribed ? (
               <>
+                {/* Title */}
+                <div className="text-center mb-6">
+                  <h2 className="text-white text-2xl font-bold tracking-wide uppercase">
+                    Sign Up for Exclusive Access
+                  </h2>
+                </div>
+                
                 <form onSubmit={handleEmailSubmit} className="space-y-4">
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Phone Number"
                     className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                     required
                   />

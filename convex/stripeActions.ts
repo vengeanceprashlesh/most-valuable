@@ -5,7 +5,7 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 
 /**
- * Create Stripe checkout session for raffle entries
+ * Create Stripe checkout session for raffle entries and direct purchases
  * This runs on the server side for security
  */
 export const createCheckoutSession: any = action({
@@ -22,43 +22,80 @@ export const createCheckoutSession: any = action({
     variantId: v.optional(v.string()),
     selectedColor: v.optional(v.string()),
     selectedSize: v.optional(v.string()),
+    purchaseType: v.optional(v.string()),
+    // Address information
+    shippingAddress: v.optional(v.object({
+      firstName: v.string(),
+      lastName: v.string(),
+      company: v.optional(v.string()),
+      address1: v.string(),
+      address2: v.optional(v.string()),
+      city: v.string(),
+      state: v.string(),
+      postalCode: v.string(),
+      country: v.string(),
+      phone: v.optional(v.string()),
+    })),
   },
   handler: async (ctx, args) => {
     const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-    // Get current raffle configuration
-    const raffle = await ctx.runQuery(api.payments.getRaffleConfig);
-    if (!raffle) {
-      throw new Error("No active raffle found");
-    }
-
-    // Check if raffle is accepting entries (use paymentStartDate for payments)
-    const now = Date.now();
-    // Use internal config to access paymentStartDate
-    const raffleInternal = await ctx.runQuery(api.payments.getRaffleConfigInternal);
-    const paymentStart = raffleInternal?.paymentStartDate || raffle.startDate;
+    // Determine if this is a direct purchase or raffle entry
+    const isDirectPurchase = args.purchaseType === "direct" || args.productId === "mv-hoodie" || args.productId === "mv-tee";
     
-    // For payments: check paymentStartDate vs endDate
-    // This allows payments to work even if timer display hasn't started yet
-    if (now < paymentStart || now > raffle.endDate) {
-      throw new Error("Raffle is not currently accepting entries");
-    }
-
-    // Validate entry count
-    if (args.count <= 0 || args.count > 100) {
-      throw new Error("Invalid entry count");
-    }
-
-    // Calculate pricing
+    // Calculate pricing based on purchase type
     let unitAmount: number;
     let productName: string;
-
-    if (args.bundle && args.count === raffle.bundleSize) {
-      unitAmount = raffle.bundlePrice;
-      productName = `${raffle.productName} - Bundle (${raffle.bundleSize} entries)`;
+    let productDescription: string;
+    
+    if (isDirectPurchase) {
+      // Direct purchase pricing
+      if (args.productId === "mv-hoodie") {
+        unitAmount = 30000; // $300.00 in cents
+        productName = "MV Members Only Hoodie";
+        productDescription = `Premium hoodie - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'})`;
+      } else if (args.productId === "mv-tee") {
+        unitAmount = 17500; // $175.00 in cents
+        productName = "MV Members Only Tee";
+        productDescription = `Exclusive tee - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'})`;
+      } else {
+        unitAmount = 30000; // Default direct purchase price - $300.00 in cents
+        productName = "Direct Purchase";
+        productDescription = "Premium collection item";
+      }
     } else {
-      unitAmount = args.count * raffle.pricePerEntry;
-      productName = `${raffle.productName} - ${args.count} ${args.count === 1 ? 'entry' : 'entries'}`;
+      // Raffle entry pricing - need raffle config
+      const raffle = await ctx.runQuery(api.payments.getRaffleConfig);
+      if (!raffle) {
+        throw new Error("No active raffle found");
+      }
+
+      // Check if raffle is accepting entries (use paymentStartDate for payments)
+      const now = Date.now();
+      // Use internal config to access paymentStartDate
+      const raffleInternal = await ctx.runQuery(api.payments.getRaffleConfigInternal);
+      const paymentStart = raffleInternal?.paymentStartDate || raffle.startDate;
+      
+      // For payments: check paymentStartDate vs endDate
+      // This allows payments to work even if timer display hasn't started yet
+      if (now < paymentStart || now > raffle.endDate) {
+        throw new Error("Raffle is not currently accepting entries");
+      }
+
+      // Validate entry count
+      if (args.count <= 0 || args.count > 100) {
+        throw new Error("Invalid entry count");
+      }
+
+      if (args.bundle && args.count === raffle.bundleSize) {
+        unitAmount = raffle.bundlePrice;
+        productName = `${raffle.productName} - Bundle (${raffle.bundleSize} entries)`;
+        productDescription = `${args.count} raffle ${args.count === 1 ? 'entry' : 'entries'} for ${raffle.productName}`;
+      } else {
+        unitAmount = args.count * raffle.pricePerEntry;
+        productName = `${raffle.productName} - ${args.count} ${args.count === 1 ? 'entry' : 'entries'}`;
+        productDescription = `${args.count} raffle ${args.count === 1 ? 'entry' : 'entries'} for ${raffle.productName}`;
+      }
     }
 
     try {
@@ -78,7 +115,7 @@ export const createCheckoutSession: any = action({
               currency: 'usd',
               product_data: {
                 name: productName,
-                description: `${args.count} raffle ${args.count === 1 ? 'entry' : 'entries'} for ${raffle.productName}`,
+                description: productDescription,
                 images: [], // Add product images if available
               },
               unit_amount: unitAmount,
@@ -91,7 +128,11 @@ export const createCheckoutSession: any = action({
           phone: args.phone || '',
           count: args.count.toString(),
           bundle: (args.bundle || false).toString(),
-          raffleId: 'current', // Could be dynamic if multiple raffles
+          purchaseType: isDirectPurchase ? 'direct' : 'raffle',
+          ...(args.productId ? { productId: args.productId } : {}),
+          ...(args.selectedColor ? { selectedColor: args.selectedColor } : {}),
+          ...(args.selectedSize ? { selectedSize: args.selectedSize } : {}),
+          raffleId: isDirectPurchase ? 'none' : 'current',
         },
         expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes
         // Mobile compatibility settings
@@ -111,6 +152,8 @@ export const createCheckoutSession: any = action({
         variantId: args.variantId,
         selectedColor: args.selectedColor,
         selectedSize: args.selectedSize,
+        // Shipping address
+        shippingAddress: args.shippingAddress,
       });
 
       console.log(`Created checkout session for ${args.email}: ${args.count} entries`);

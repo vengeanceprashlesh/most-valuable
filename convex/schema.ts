@@ -31,6 +31,19 @@ export default defineSchema({
     variantColor: v.optional(v.string()), // Selected color name (e.g., "Black", "White")
     size: v.optional(v.string()), // Selected size (e.g., "M", "L")
     productCategory: v.optional(v.string()), // Category (e.g., "tee")
+    // Address collection for delivery
+    shippingAddress: v.optional(v.object({
+      firstName: v.string(),
+      lastName: v.string(),
+      company: v.optional(v.string()),
+      address1: v.string(),
+      address2: v.optional(v.string()),
+      city: v.string(),
+      state: v.string(),
+      postalCode: v.string(),
+      country: v.string(),
+      phone: v.optional(v.string()),
+    })),
   }).index("by_email", ["email"])
     .index("by_payment_status", ["paymentStatus"])
     .index("by_created_at", ["createdAt"])

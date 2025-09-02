@@ -266,6 +266,9 @@ export default function UltraSecureAdminDashboard() {
   const paidEntries = completedEntries.filter(e => e.amount > 0);
   const freeEntries = completedEntries.filter(e => e.amount === 0);
   
+  // ORDERS should only show PAID entries (actual purchases), not free entries
+  const paidOrders = paidEntries;
+  
   // Use raffleStats for accurate data or fallback to manual calculation
   const totalRevenue = raffleStats?.totalRevenue || paidEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalEntries = raffleStats?.totalEntries || completedEntries.reduce((sum, entry) => sum + entry.count, 0);
@@ -586,7 +589,7 @@ export default function UltraSecureAdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {completedEntries.slice(0, 20).map((entry) => (
+                  {paidOrders.slice(0, 20).map((entry) => (
                     <tr key={entry._id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-4">
                         <div>
@@ -601,7 +604,7 @@ export default function UltraSecureAdminDashboard() {
                           {entry.productName ? (
                             <div className="font-medium text-gray-900">{entry.productName}</div>
                           ) : (
-                            <div className="font-medium text-gray-900">Holiday Collection</div>
+                            <div className="font-medium text-gray-900">Gold Rush Collection</div>
                           )}
                           <div className="flex gap-3 text-xs text-gray-600">
                             {entry.variantColor && (
@@ -615,6 +618,48 @@ export default function UltraSecureAdminDashboard() {
                             <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                               Bundle Deal
                             </span>
+                          )}
+                          {entry.shippingAddress ? (
+                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                              <div className="font-medium text-green-800 mb-1 flex items-center">
+                                <span className="text-green-600 mr-1">📍</span>
+                                Ship To
+                              </div>
+                              <div className="text-gray-800 space-y-0.5">
+                                <div className="font-medium">
+                                  {entry.shippingAddress.firstName} {entry.shippingAddress.lastName}
+                                  {entry.shippingAddress.company && (
+                                    <span className="text-gray-600 ml-1">• {entry.shippingAddress.company}</span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  <span>{entry.shippingAddress.address1}</span>
+                                  {entry.shippingAddress.address2 && (
+                                    <span>• {entry.shippingAddress.address2}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span>{entry.shippingAddress.city}, {entry.shippingAddress.state} {entry.shippingAddress.postalCode}</span>
+                                  <span className="text-gray-600">• {entry.shippingAddress.country || 'US'}</span>
+                                  {entry.shippingAddress.phone && (
+                                    <span className="flex items-center text-blue-700">
+                                      <span className="mr-0.5">📞</span>
+                                      {entry.shippingAddress.phone}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                              <div className="font-medium text-orange-800 mb-1 flex items-center">
+                                <span className="text-orange-600 mr-1">⚠️</span>
+                                No Shipping Address
+                              </div>
+                              <div className="text-orange-700 text-xs">
+                                Order placed before address collection was implemented
+                              </div>
+                            </div>
                           )}
                         </div>
                       </td>
@@ -637,14 +682,14 @@ export default function UltraSecureAdminDashboard() {
                   ))}
                 </tbody>
               </table>
-              {completedEntries.length === 0 && (
+              {paidOrders.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  No completed orders yet.
+                  No paid orders yet.
                 </div>
               )}
-              {completedEntries.length > 20 && (
+              {paidOrders.length > 20 && (
                 <div className="mt-4 text-center text-gray-500 text-sm">
-                  Showing latest 20 orders. Total: {completedEntries.length} orders.
+                  Showing latest 20 paid orders. Total: {paidOrders.length} orders.
                 </div>
               )}
             </div>

@@ -14,6 +14,21 @@ export async function POST(req: Request) {
     const variantId = typeof body?.variantId === "string" ? body.variantId : undefined;
     const selectedColor = typeof body?.selectedColor === "string" ? body.selectedColor : undefined;
     const selectedSize = typeof body?.selectedSize === "string" ? body.selectedSize : undefined;
+    const purchaseType = typeof body?.purchaseType === "string" ? body.purchaseType : undefined;
+    
+    // Shipping address data
+    const shippingAddress = body?.shippingAddress ? {
+      firstName: body.shippingAddress.firstName || '',
+      lastName: body.shippingAddress.lastName || '',
+      company: body.shippingAddress.company || undefined,
+      address1: body.shippingAddress.address1 || '',
+      address2: body.shippingAddress.address2 || undefined,
+      city: body.shippingAddress.city || '',
+      state: body.shippingAddress.state || '',
+      postalCode: body.shippingAddress.postalCode || '',
+      country: body.shippingAddress.country || 'US',
+      phone: body.shippingAddress.phone || undefined,
+    } : undefined;
 
     if (!Number.isFinite(quantity) || quantity <= 0) {
       return NextResponse.json({ error: "Invalid quantity" }, { status: 400 });
@@ -56,6 +71,9 @@ export async function POST(req: Request) {
       variantId,
       selectedColor,
       selectedSize,
+      purchaseType,
+      // Shipping address
+      shippingAddress,
     });
 
     return NextResponse.json({ url: result.url });
