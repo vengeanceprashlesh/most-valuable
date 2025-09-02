@@ -154,22 +154,48 @@ export default function Home() {
                 >
                   {isSubmitting ? "Adding..." : "Subscribe"}
                 </button>
-                <div className="text-center space-y-3">
-                  <div className="bg-black/30 backdrop-blur border border-white/20 rounded-lg p-4">
-                    <p className="text-yellow-300 font-semibold text-sm mb-3">🏆 Gold Rush Giveaway</p>
-                    <p className="text-white/90 text-xs leading-relaxed mb-3">
-                      Subscribe for <span className="text-yellow-300 font-semibold">FREE</span> to claim 1 entry into the Gold Rush Giveaway. 1 winner will receive a 1 of 1 shirt.
-                    </p>
-                    <p className="text-white/80 text-xs leading-relaxed mb-3">
-                      Want better odds? You can purchase extra entries for <span className="text-green-300 font-semibold">$50 each</span>.
-                    </p>
-                    <p className="text-white/80 text-xs leading-relaxed">
-                      If the winner purchased at least one paid entry, they will receive the first-ever shirt backed by <span className="text-yellow-300 font-semibold">¼ oz of real gold</span> — making history as the first of its kind.
-                    </p>
+                <div className="mt-6 bg-black/40 backdrop-blur-sm rounded-2xl p-6 space-y-4">
+                  {/* Clean title */}
+                  <div className="text-center">
+                    <h3 className="text-amber-200 text-sm font-medium mb-3">Gold Rush Giveaway</h3>
                   </div>
-                  <p className="text-[10px] text-white/60">
-                    <Link href="/privacy" className="underline hover:text-white/80 transition-colors">Privacy Policy</Link> & <Link href="/terms" className="underline hover:text-white/80 transition-colors">Terms</Link>
-                  </p>
+                  
+                  {/* Minimal content blocks */}
+                  <div className="space-y-3 text-center">
+                    <p className="text-white/90 text-sm leading-relaxed">
+                      Subscribe for <span className="text-amber-300 font-medium">FREE</span> to claim 1 entry into the Gold Rush Giveaway. 1 winner will receive a 1 of 1 shirt
+                    </p>
+                    
+                    <p className="text-white/80 text-sm">
+                      Want better odds? You can purchase extra entries for <span className="text-emerald-300 font-medium">$50 each</span>.
+                    </p>
+                    
+                    <p className="text-white/85 text-sm leading-relaxed">
+                      If the winner purchased at least one paid entry, they will receive the first-ever shirt backed by <span className="text-amber-300 font-medium">¼ oz of real gold</span> — making history as the first of its kind.
+                    </p>
+                    
+                    <div className="pt-2 space-y-1">
+                      <p className="text-white/70 text-xs">
+                        These 2 quality 1 of 1 shirts are both backed by 1/4oz of pure gold.
+                      </p>
+                      <p className="text-white/60 text-xs">
+                        Please allow up to 4 weeks for shipping (shirts will be custom made to order).
+                      </p>
+                      <div className="flex justify-center">
+                        <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/20">
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                          <span className="text-white/80 text-xs font-medium">Unlimited entries available</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Clean footer */}
+                  <div className="pt-4 flex justify-center gap-3 text-white/40 text-xs">
+                    <Link href="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</Link>
+                    <span>•</span>
+                    <Link href="/terms" className="hover:text-white/70 transition-colors">Terms</Link>
+                  </div>
                 </div>
               </form>
             ) : showSuccess ? (

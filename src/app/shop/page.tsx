@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { products } from "@/data/products";
 import { RaffleCountdownTimer } from "@/components/RaffleCountdownTimer";
+import InstagramLink from "@/components/InstagramLink";
 
 type VariantState = Record<string, string>; // productId -> variantId
 
@@ -335,6 +336,16 @@ export default function ShopPage() {
               </Link>
             );
           })}
+        </div>
+        
+        {/* Instagram Link */}
+        <div className="mt-16 mb-8 flex justify-center">
+          <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-all duration-200">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-3">Connect with us</p>
+              <InstagramLink size="lg" className="justify-center" />
+            </div>
+          </div>
         </div>
       </section>
     </main>
