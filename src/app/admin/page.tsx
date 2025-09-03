@@ -266,8 +266,8 @@ export default function UltraSecureAdminDashboard() {
   const paidEntries = completedEntries.filter(e => e.amount > 0);
   const freeEntries = completedEntries.filter(e => e.amount === 0);
   
-  // ORDERS should only show PAID entries (actual purchases), not free entries
-  const paidOrders = paidEntries;
+  // ORDERS should show ALL entries (both paid orders and free subscription entries)
+  const allOrders = completedEntries;
   
   // Use raffleStats for accurate data or fallback to manual calculation
   const totalRevenue = raffleStats?.totalRevenue || paidEntries.reduce((sum, entry) => sum + entry.amount, 0);
@@ -575,7 +575,19 @@ export default function UltraSecureAdminDashboard() {
         {/* ORDERS */}
         {activeTab === "orders" && (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Order Management</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Order Management</h3>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                  <span className="text-gray-600">Paid Orders ({paidEntries.length})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div>
+                  <span className="text-gray-600">Free Subscriptions ({freeEntries.length})</span>
+                </div>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -589,8 +601,10 @@ export default function UltraSecureAdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paidOrders.slice(0, 20).map((entry) => (
-                    <tr key={entry._id} className="border-b border-gray-100 hover:bg-gray-50">
+                  {allOrders.slice(0, 20).map((entry) => (
+                    <tr key={entry._id} className={`border-b border-gray-100 hover:bg-gray-50 ${
+                      entry.amount === 0 ? 'bg-blue-50/30' : 'bg-green-50/30'
+                    }`}>
                       <td className="py-4">
                         <div>
                           <div className="font-medium text-gray-900">{entry.email}</div>
@@ -601,64 +615,83 @@ export default function UltraSecureAdminDashboard() {
                       </td>
                       <td className="py-4">
                         <div className="space-y-1">
-                          {entry.productName ? (
-                            <div className="font-medium text-gray-900">{entry.productName}</div>
-                          ) : (
-                            <div className="font-medium text-gray-900">Gold Rush Collection</div>
-                          )}
-                          <div className="flex gap-3 text-xs text-gray-600">
-                            {entry.variantColor && (
-                              <span className="bg-gray-100 px-2 py-1 rounded">Color: {entry.variantColor}</span>
-                            )}
-                            {entry.size && (
-                              <span className="bg-gray-100 px-2 py-1 rounded">Size: {entry.size}</span>
-                            )}
-                          </div>
-                          {entry.bundle && (
-                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                              Bundle Deal
-                            </span>
-                          )}
-                          {entry.shippingAddress ? (
-                            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
-                              <div className="font-medium text-green-800 mb-1 flex items-center">
-                                <span className="text-green-600 mr-1">📍</span>
-                                Ship To
+                          {entry.amount === 0 ? (
+                            /* Free subscription entry */
+                            <div className="space-y-1">
+                              <div className="font-medium text-blue-700 flex items-center gap-1">
+                                <span>📧</span>
+                                <span>Free Subscription</span>
                               </div>
-                              <div className="text-gray-800 space-y-0.5">
-                                <div className="font-medium">
-                                  {entry.shippingAddress.firstName} {entry.shippingAddress.lastName}
-                                  {entry.shippingAddress.company && (
-                                    <span className="text-gray-600 ml-1">• {entry.shippingAddress.company}</span>
-                                  )}
-                                </div>
-                                <div className="flex flex-wrap gap-1">
-                                  <span>{entry.shippingAddress.address1}</span>
-                                  {entry.shippingAddress.address2 && (
-                                    <span>• {entry.shippingAddress.address2}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span>{entry.shippingAddress.city}, {entry.shippingAddress.state} {entry.shippingAddress.postalCode}</span>
-                                  <span className="text-gray-600">• {entry.shippingAddress.country || 'US'}</span>
-                                  {entry.shippingAddress.phone && (
-                                    <span className="flex items-center text-blue-700">
-                                      <span className="mr-0.5">📞</span>
-                                      {entry.shippingAddress.phone}
-                                    </span>
-                                  )}
-                                </div>
+                              <div className="text-xs text-blue-600">
+                                Landing page signup - Free raffle entry
+                              </div>
+                              <div className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                Newsletter Subscriber
                               </div>
                             </div>
                           ) : (
-                            <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
-                              <div className="font-medium text-orange-800 mb-1 flex items-center">
-                                <span className="text-orange-600 mr-1">⚠️</span>
-                                No Shipping Address
+                            /* Paid order */
+                            <div className="space-y-1">
+                              {entry.productName ? (
+                                <div className="font-medium text-gray-900">{entry.productName}</div>
+                              ) : (
+                                <div className="font-medium text-gray-900">Gold Rush Collection</div>
+                              )}
+                              <div className="flex gap-3 text-xs text-gray-600">
+                                {entry.variantColor && (
+                                  <span className="bg-gray-100 px-2 py-1 rounded">Color: {entry.variantColor}</span>
+                                )}
+                                {entry.size && (
+                                  <span className="bg-gray-100 px-2 py-1 rounded">Size: {entry.size}</span>
+                                )}
                               </div>
-                              <div className="text-orange-700 text-xs">
-                                Order placed before address collection was implemented
-                              </div>
+                              {entry.bundle && (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                  Bundle Deal
+                                </span>
+                              )}
+                              {entry.shippingAddress ? (
+                                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                                  <div className="font-medium text-green-800 mb-1 flex items-center">
+                                    <span className="text-green-600 mr-1">📍</span>
+                                    Ship To
+                                  </div>
+                                  <div className="text-gray-800 space-y-0.5">
+                                    <div className="font-medium">
+                                      {entry.shippingAddress.firstName} {entry.shippingAddress.lastName}
+                                      {entry.shippingAddress.company && (
+                                        <span className="text-gray-600 ml-1">• {entry.shippingAddress.company}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      <span>{entry.shippingAddress.address1}</span>
+                                      {entry.shippingAddress.address2 && (
+                                        <span>• {entry.shippingAddress.address2}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span>{entry.shippingAddress.city}, {entry.shippingAddress.state} {entry.shippingAddress.postalCode}</span>
+                                      <span className="text-gray-600">• {entry.shippingAddress.country || 'US'}</span>
+                                      {entry.shippingAddress.phone && (
+                                        <span className="flex items-center text-blue-700">
+                                          <span className="mr-0.5">📞</span>
+                                          {entry.shippingAddress.phone}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                                  <div className="font-medium text-orange-800 mb-1 flex items-center">
+                                    <span className="text-orange-600 mr-1">⚠️</span>
+                                    No Shipping Address
+                                  </div>
+                                  <div className="text-orange-700 text-xs">
+                                    Order placed before address collection was implemented
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -682,14 +715,14 @@ export default function UltraSecureAdminDashboard() {
                   ))}
                 </tbody>
               </table>
-              {paidOrders.length === 0 && (
+              {allOrders.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  No paid orders yet.
+                  No entries yet.
                 </div>
               )}
-              {paidOrders.length > 20 && (
+              {allOrders.length > 20 && (
                 <div className="mt-4 text-center text-gray-500 text-sm">
-                  Showing latest 20 paid orders. Total: {paidOrders.length} orders.
+                  Showing latest 20 entries. Total: {allOrders.length} entries ({paidEntries.length} paid, {freeEntries.length} free).
                 </div>
               )}
             </div>
