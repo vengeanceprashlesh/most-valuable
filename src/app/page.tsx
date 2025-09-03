@@ -167,7 +167,7 @@ export default function Home() {
               <>
                 {/* Title */}
                 <div className="text-center mb-6">
-                  <h2 className="text-white text-2xl font-bold tracking-wide uppercase">
+                  <h2 className="text-white text-lg sm:text-2xl font-bold tracking-wide uppercase whitespace-nowrap">
                     Sign Up for Exclusive Access
                   </h2>
                 </div>
