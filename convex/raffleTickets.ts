@@ -163,13 +163,24 @@ export const validateTicketIntegrity = query({
       issues.push("Duplicate ticket numbers found");
     }
 
-    // Verify against entries
+    // Verify against entries - only count raffle entries, not direct purchases
     const completedEntries = await ctx.db
       .query("entries")
       .withIndex("by_payment_status", (q) => q.eq("paymentStatus", "completed"))
       .collect();
 
-    const expectedTotalTickets = completedEntries.reduce((sum, entry) => sum + entry.count, 0);
+    // Filter out direct purchases that shouldn't have raffle tickets
+    const raffleEntries = completedEntries.filter(entry => {
+      const isDirectPurchase = entry.productId === "mv-hoodie" || 
+                               entry.productId === "mv-tee" ||
+                               entry.productId === "p6" || 
+                               entry.productId === "p7" ||
+                               entry.productId === "p1b" || 
+                               entry.productId === "p1w";
+      return !isDirectPurchase;
+    });
+
+    const expectedTotalTickets = raffleEntries.reduce((sum, entry) => sum + entry.count, 0);
     if (allTickets.length !== expectedTotalTickets) {
       issues.push(`Ticket count mismatch: expected ${expectedTotalTickets}, found ${allTickets.length}`);
     }
@@ -179,6 +190,91 @@ export const validateTicketIntegrity = query({
       totalTickets: allTickets.length,
       expectedTickets: expectedTotalTickets,
       issues,
+      totalEntries: completedEntries.length,
+      raffleEntries: raffleEntries.length,
+      directPurchases: completedEntries.length - raffleEntries.length,
+    };
+  },
+});
+
+/**
+ * Completely rebuild raffle tickets from scratch
+ * This fixes any gaps or inconsistencies in ticket numbering
+ */
+export const rebuildAllRaffleTickets = mutation({
+  args: {
+    adminToken: v.string(),
+  },
+  handler: async (ctx, { adminToken }) => {
+    // Verify admin token
+    if (adminToken !== "mvr-admin-2025-secure-token") {
+      throw new Error("Unauthorized: Invalid admin token");
+    }
+
+    console.log("🚨 REBUILDING ALL RAFFLE TICKETS");
+
+    // Step 1: Delete all existing raffle tickets
+    const existingTickets = await ctx.db.query("raffleTickets").collect();
+    for (const ticket of existingTickets) {
+      await ctx.db.delete(ticket._id);
+    }
+    console.log(`🗑️ Deleted ${existingTickets.length} existing tickets`);
+
+    // Step 2: Get all completed entries that should have raffle tickets
+    const completedEntries = await ctx.db
+      .query("entries")
+      .withIndex("by_payment_status", (q) => q.eq("paymentStatus", "completed"))
+      .order("asc") // Process in chronological order for fairness
+      .collect();
+
+    // Filter out direct purchases
+    const raffleEntries = completedEntries.filter(entry => {
+      const isDirectPurchase = entry.productId === "mv-hoodie" || 
+                               entry.productId === "mv-tee" ||
+                               entry.productId === "p6" || 
+                               entry.productId === "p7" ||
+                               entry.productId === "p1b" || 
+                               entry.productId === "p1w";
+      return !isDirectPurchase;
+    });
+
+    console.log(`📊 Found ${raffleEntries.length} raffle entries out of ${completedEntries.length} total entries`);
+
+    // Step 3: Reassign tickets sequentially
+    let currentTicketNumber = 1;
+    const reassignedTickets = [];
+
+    for (const entry of raffleEntries) {
+      // Assign sequential ticket numbers for this entry
+      for (let i = 0; i < entry.count; i++) {
+        const ticketId = await ctx.db.insert("raffleTickets", {
+          entryId: entry._id,
+          email: entry.email,
+          ticketNumber: currentTicketNumber + i,
+          createdAt: Date.now(),
+        });
+        reassignedTickets.push({
+          ticketId,
+          ticketNumber: currentTicketNumber + i,
+          email: entry.email,
+          entryId: entry._id,
+        });
+      }
+      
+      console.log(`✅ Assigned ${entry.count} tickets (${currentTicketNumber} to ${currentTicketNumber + entry.count - 1}) to ${entry.email}`);
+      currentTicketNumber += entry.count;
+    }
+
+    console.log(`🎯 REBUILD COMPLETE: ${reassignedTickets.length} tickets reassigned`);
+
+    return {
+      success: true,
+      deletedTickets: existingTickets.length,
+      reassignedTickets: reassignedTickets.length,
+      totalRaffleEntries: raffleEntries.length,
+      totalDirectPurchases: completedEntries.length - raffleEntries.length,
+      finalTicketRange: reassignedTickets.length > 0 ? 
+        `${reassignedTickets[0].ticketNumber} to ${reassignedTickets[reassignedTickets.length - 1].ticketNumber}` : "None",
     };
   },
 });

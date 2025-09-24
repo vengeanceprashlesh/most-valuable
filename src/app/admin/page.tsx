@@ -20,6 +20,7 @@ export default function UltraSecureAdminDashboard() {
   const adminLogout = useMutation(api.adminAuth.adminLogout);
   const selectWinner = useMutation(api.winnerSelection.selectRaffleWinner);
   const resetSecurity = useMutation(api.adminAuth.resetAdminSecurity);
+  const rebuildTickets = useMutation(api.raffleTickets.rebuildAllRaffleTickets);
   
   // Winner data
   const winnersData = useQuery(
@@ -189,7 +190,53 @@ export default function UltraSecureAdminDashboard() {
       );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Check if it's a ticket integrity error and offer to fix it
+      if (errorMessage.includes("Ticket integrity check failed")) {
+        const shouldFix = confirm(
+          "🎫 TICKET SYSTEM ERROR DETECTED 🎫\n\n" +
+          "The raffle ticket system has integrity issues that prevent winner selection.\n\n" +
+          "🔧 AUTOMATIC FIX AVAILABLE\n\n" +
+          "Would you like to automatically rebuild the ticket system?\n\n" +
+          "This will:\n" +
+          "✅ Fix all ticket numbering gaps\n" +
+          "✅ Ensure sequential ticket numbers\n" +
+          "✅ Enable winner selection\n" +
+          "✅ Maintain all existing entries\n\n" +
+          "Click OK to fix automatically, or Cancel to fix manually."
+        );
+        
+        if (shouldFix) {
+          await handleTicketRebuild();
+          return;
+        }
+      }
+      
       alert(`🚨 WINNER SELECTION FAILED: ${errorMessage}`);
+    }
+    setLoading(false);
+  };
+
+  const handleTicketRebuild = async () => {
+    if (!sessionToken) return;
+    
+    try {
+      setLoading(true);
+      const result = await rebuildTickets({
+        adminToken: "mvr-admin-2025-secure-token",
+      });
+      
+      alert(
+        `🎫 TICKET SYSTEM REBUILT! 🎫\n\n` +
+        `Deleted Old Tickets: ${result.deletedTickets}\n` +
+        `Reassigned Tickets: ${result.reassignedTickets}\n` +
+        `Raffle Entries: ${result.totalRaffleEntries}\n` +
+        `Ticket Range: ${result.finalTicketRange}\n\n` +
+        `✅ Winner selection is now ready!`
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`🚨 TICKET REBUILD FAILED: ${errorMessage}`);
     }
     setLoading(false);
   };
@@ -503,12 +550,12 @@ export default function UltraSecureAdminDashboard() {
                 <button 
                   onClick={handleWinnerSelection}
                   disabled={totalEntries === 0 || loading}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium mb-4"
                 >
                   {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
                 </button>
               ) : winnersData && winnersData.remainingWinners === 0 ? (
-                <div className="text-center py-4">
+                <div className="text-center py-4 mb-4">
                   <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
                     <span className="text-lg mr-2">🎉</span>
                     Winner has been selected!
@@ -518,11 +565,26 @@ export default function UltraSecureAdminDashboard() {
                 <button 
                   onClick={handleWinnerSelection}
                   disabled={totalEntries === 0 || loading}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium mb-4"
                 >
                   {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
                 </button>
               )}
+
+              {/* Ticket System Maintenance */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-medium text-yellow-800 mb-2">🔧 System Maintenance</h4>
+                <p className="text-sm text-yellow-700 mb-3">
+                  If winner selection fails due to ticket integrity issues, use this tool to rebuild the ticket system.
+                </p>
+                <button 
+                  onClick={handleTicketRebuild}
+                  disabled={loading}
+                  className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm"
+                >
+                  {loading ? "Rebuilding..." : "Rebuild Ticket System"}
+                </button>
+              </div>
             </div>
           </div>
         )}
