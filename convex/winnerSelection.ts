@@ -15,6 +15,7 @@ function generateSecureRandomSeed(): string {
 
 /**
  * Create a verification hash for the winner selection
+ * Using a simple hash function that works in any JavaScript environment
  */
 function createVerificationHash(
   winningTicketNumber: number,
@@ -22,9 +23,19 @@ function createVerificationHash(
   randomSeed: string,
   winnerEmail: string
 ): string {
-  // Create a simple hash for verification (in production, use crypto hash)
+  // Create a simple hash for verification using custom hash function
   const data = `${winningTicketNumber}:${totalTickets}:${randomSeed}:${winnerEmail}`;
-  return Buffer.from(data).toString('base64');
+  
+  // Simple custom hash function that works everywhere
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Convert to hex and ensure positive
+  return Math.abs(hash).toString(16).padStart(8, '0');
 }
 
 /**
@@ -352,5 +363,78 @@ export const markPrizeDelivered = mutation({
     });
 
     return { success: true };
+  },
+});
+
+/**
+ * Reset winner selection - clears all winners for the current active raffle
+ * DANGEROUS: Only use for testing/fixing purposes
+ */
+export const resetWinnerSelection = mutation({
+  args: {
+    adminToken: v.string(),
+    confirmReset: v.string(), // Must be "CONFIRM_RESET_WINNERS"
+  },
+  handler: async (ctx, { adminToken, confirmReset }) => {
+    // Verify admin token
+    if (adminToken !== "mvr-admin-2025-secure-token") {
+      throw new Error("Unauthorized: Invalid admin token");
+    }
+
+    // Verify confirmation phrase
+    if (confirmReset !== "CONFIRM_RESET_WINNERS") {
+      throw new Error("Invalid confirmation. Must provide 'CONFIRM_RESET_WINNERS'");
+    }
+
+    // Get current active raffle
+    const activeRaffle = await ctx.db
+      .query("raffleConfig")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .first();
+
+    if (!activeRaffle) {
+      throw new Error("No active raffle found");
+    }
+
+    // Get all winners for this raffle
+    const winners = await ctx.db
+      .query("raffleWinners")
+      .withIndex("by_raffle", (q) => q.eq("raffleConfigId", activeRaffle._id))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    if (winners.length === 0) {
+      return {
+        success: true,
+        message: "No winners to reset",
+        winnersRemoved: 0,
+      };
+    }
+
+    // Mark all winners as inactive (soft delete)
+    let winnersRemoved = 0;
+    for (const winner of winners) {
+      await ctx.db.patch(winner._id, {
+        isActive: false,
+        notes: (winner.notes || "") + `\n[RESET ${new Date().toISOString()}] Admin reset for testing/fixing`,
+      });
+      winnersRemoved++;
+    }
+
+    // Clear winner from raffle config (for backwards compatibility)
+    await ctx.db.patch(activeRaffle._id, {
+      winner: undefined,
+      winnerSelectedAt: undefined,
+    });
+
+    console.log(`🔄 WINNER SELECTION RESET: Removed ${winnersRemoved} winner(s) from raffle ${activeRaffle.name}`);
+
+    return {
+      success: true,
+      message: `Winner selection reset successfully. Removed ${winnersRemoved} winner(s).`,
+      winnersRemoved,
+      raffleId: activeRaffle._id,
+      raffleName: activeRaffle.name,
+    };
   },
 });

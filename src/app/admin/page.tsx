@@ -21,6 +21,7 @@ export default function UltraSecureAdminDashboard() {
   const selectWinner = useMutation(api.winnerSelection.selectRaffleWinner);
   const resetSecurity = useMutation(api.adminAuth.resetAdminSecurity);
   const rebuildTickets = useMutation(api.raffleTickets.rebuildAllRaffleTickets);
+  const resetWinners = useMutation(api.winnerSelection.resetWinnerSelection);
   
   // Winner data
   const winnersData = useQuery(
@@ -164,13 +165,27 @@ export default function UltraSecureAdminDashboard() {
     
     if (!confirmation) return;
     
+    // Show the exact phrase they need to type in a more prominent way
+    const requiredPhrase = "EXECUTE WINNER SELECTION";
     const finalConfirmation = prompt(
       "🎲 FINAL SECURITY CHECK 🎲\n\n" +
-      "Type 'EXECUTE WINNER SELECTION' to confirm this irreversible action:"
+      "For security, please type this EXACT phrase:\n\n" +
+      `▶️ ${requiredPhrase} ◀️\n\n` +
+      "(You can copy and paste from above)\n\n" +
+      "Enter the confirmation phrase:"
     );
     
-    if (finalConfirmation !== "EXECUTE WINNER SELECTION") {
-      alert("❌ Operation cancelled - incorrect confirmation phrase");
+    // Normalize the input by trimming whitespace and converting to uppercase
+    const normalizedInput = finalConfirmation?.trim().toUpperCase();
+    const expectedPhrase = requiredPhrase.toUpperCase();
+    
+    if (!finalConfirmation || normalizedInput !== expectedPhrase) {
+      alert(
+        `❌ Operation cancelled - confirmation phrase mismatch\n\n` +
+        `🎯 Required: "${requiredPhrase}"\n` +
+        `🔍 You entered: "${finalConfirmation || '(nothing)'}"\n\n` +
+        `📝 Tip: Copy and paste the exact phrase above`
+      );
       return;
     }
     
@@ -237,6 +252,61 @@ export default function UltraSecureAdminDashboard() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert(`🚨 TICKET REBUILD FAILED: ${errorMessage}`);
+    }
+    setLoading(false);
+  };
+
+  const handleResetWinners = async () => {
+    if (!sessionToken) return;
+    
+    const confirmation = confirm(
+      "🚨 RESET WINNER SELECTION 🚨\n\n" +
+      "This will REMOVE the current winner selection and allow you to select a new winner.\n\n" +
+      "⚠️  USE ONLY FOR TESTING/FIXING ⚠️\n\n" +
+      "✅ Current winner will be marked inactive\n" +
+      "✅ You can select a new winner afterwards\n" +
+      "✅ Audit trail will be preserved\n\n" +
+      "Are you ABSOLUTELY CERTAIN you want to reset?"
+    );
+    
+    if (!confirmation) return;
+    
+    const requiredPhrase = "CONFIRM_RESET_WINNERS";
+    const finalConfirmation = prompt(
+      "🔄 FINAL CONFIRMATION 🔄\n\n" +
+      "For security, please type this EXACT phrase:\n\n" +
+      `▶️ ${requiredPhrase} ◀️\n\n` +
+      "(You can copy and paste from above)\n\n" +
+      "Enter the confirmation phrase:"
+    );
+    
+    if (!finalConfirmation || finalConfirmation.trim() !== requiredPhrase) {
+      alert(
+        `❌ Operation cancelled - confirmation phrase mismatch\n\n` +
+        `🎯 Required: "${requiredPhrase}"\n` +
+        `🔍 You entered: "${finalConfirmation || '(nothing)'}"\n\n` +
+        `📝 Tip: Copy and paste the exact phrase above`
+      );
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const result = await resetWinners({
+        adminToken: "mvr-admin-2025-secure-token",
+        confirmReset: "CONFIRM_RESET_WINNERS",
+      });
+      
+      alert(
+        `🔄 WINNER SELECTION RESET! 🔄\n\n` +
+        `Winners Removed: ${result.winnersRemoved}\n` +
+        `Raffle: ${result.raffleName}\n\n` +
+        `✅ You can now select a new winner!\n` +
+        `✅ All audit data preserved`
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`🚨 WINNER RESET FAILED: ${errorMessage}`);
     }
     setLoading(false);
   };
@@ -542,6 +612,20 @@ export default function UltraSecureAdminDashboard() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Winner Reset Button */}
+                  <div className="mt-4 pt-4 border-t border-green-200">
+                    <button 
+                      onClick={handleResetWinners}
+                      disabled={loading}
+                      className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white px-4 py-2 rounded text-sm font-medium"
+                    >
+                      {loading ? "Resetting..." : "🔄 Reset Winner Selection (Testing Only)"}
+                    </button>
+                    <p className="text-xs text-orange-700 mt-2 text-center">
+                      This will remove the current winner and allow selecting a new one
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -550,9 +634,21 @@ export default function UltraSecureAdminDashboard() {
                 <button 
                   onClick={handleWinnerSelection}
                   disabled={totalEntries === 0 || loading}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium mb-4"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium mb-4 relative"
                 >
-                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processing Winner Selection...
+                    </div>
+                  ) : totalEntries === 0 ? (
+                    "No Tickets Available"
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <span className="mr-2">🎲</span>
+                      Select Winner ({totalEntries} tickets total)
+                    </div>
+                  )}
                 </button>
               ) : winnersData && winnersData.remainingWinners === 0 ? (
                 <div className="text-center py-4 mb-4">
@@ -567,7 +663,19 @@ export default function UltraSecureAdminDashboard() {
                   disabled={totalEntries === 0 || loading}
                   className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium mb-4"
                 >
-                  {loading ? "Processing..." : totalEntries === 0 ? "No Tickets Available" : "Select Winner"}
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processing Winner Selection...
+                    </div>
+                  ) : totalEntries === 0 ? (
+                    "No Tickets Available"
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <span className="mr-2">🎲</span>
+                      Select Winner ({totalEntries} tickets total)
+                    </div>
+                  )}
                 </button>
               )}
 
