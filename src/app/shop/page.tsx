@@ -30,23 +30,23 @@ function StatusBadge({ status }: { status: "sold_out" | "coming_soon" | "availab
 // Client-only video component to prevent hydration issues
 function ClientVideo({ src, className = "" }: { src: string; alt: string; className?: string }) {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   if (!isMounted) {
     // Show a placeholder during SSR
     return <div className={`absolute inset-0 h-full w-full bg-gray-100 ${className}`} />;
   }
-  
+
   return (
-    <video 
-      className={`absolute inset-0 h-full w-full object-contain ${className}`} 
-      src={src} 
-      autoPlay 
-      loop 
-      muted 
+    <video
+      className={`absolute inset-0 h-full w-full object-contain ${className}`}
+      src={src}
+      autoPlay
+      loop
+      muted
       playsInline
       key={src} // Force re-render on src change to avoid browser extension conflicts
     />
@@ -67,7 +67,7 @@ export default function ShopPage() {
   // Track selected variant per product
   const initial: VariantState = useMemo(() => {
     // Preselect Black variants for products with variants
-    return { 
+    return {
       "mv-hoodie": "mv-hoodie-blk", // MV Members Only Hoodie
       "mv-tee": "mv-tee-blk" // MV Members Only Tee
     };
@@ -139,7 +139,7 @@ export default function ShopPage() {
               >
                 <div className="relative">
                   <div className="block">
-                    <div className={`relative aspect-[1/1] sm:aspect-[3/4] w-full overflow-hidden rounded-none bg-transparent ring-0 sm:rounded-lg ${(["raffle","p1b","p1w","p3","p4","p5","p7","p8"].includes(p.id) || idx >= 6) ? "sm:bg-white" : "sm:bg-gray-100"} sm:ring-1 sm:ring-gray-200`}>
+                    <div className={`relative aspect-[1/1] sm:aspect-[3/4] w-full overflow-hidden rounded-none bg-transparent ring-0 sm:rounded-lg ${(["raffle", "p1b", "p1w", "p3", "p4", "p5", "p7", "p8"].includes(p.id) || idx >= 6) ? "sm:bg-white" : "sm:bg-gray-100"} sm:ring-1 sm:ring-gray-200`}>
                       {/* Sliding track */}
                       <div
                         className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
@@ -154,24 +154,24 @@ export default function ShopPage() {
                                 p.id === "raffle"
                                   ? "scale-[1.7] md:scale-[1.3] object-[50%_60%] sm:object-center"
                                   : p.id === "mv-hoodie"
-                                  ? "scale-[1.4] md:scale-[1.2] object-center"
-                                  : p.id === "mv-tee"
-                                  ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
-                                  : p.id === "p6"
-                                  ? "scale-[1.7] md:scale-[1.4]"
-                                  : p.id === "p7"
-                                  ? "scale-[1.7] md:scale-[1.4] object-[60%_50%]"
-                                  : p.id === "p3"
-                                  ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
-                                  : p.id === "p4"
-                                  ? "scale-[1.3] md:scale-[1.35]"
-                                  : ["p5","p8"].includes(p.id)
-                                  ? "scale-[1.6] md:scale-[1.3]"
-                                  : ["p1b","p1w"].includes(p.id)
-                                  ? "scale-[1.1] sm:scale-100"
-                                  : p.id === "p9"
-                                  ? "scale-100 sm:scale-100"
-                                  : "scale-[1.7] sm:scale-100"
+                                    ? "scale-[1.7] md:scale-[1.5] object-center"
+                                    : p.id === "mv-tee"
+                                      ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
+                                      : p.id === "p6"
+                                        ? "scale-[1.7] md:scale-[1.4]"
+                                        : p.id === "p7"
+                                          ? "scale-[1.7] md:scale-[1.4] object-[60%_50%]"
+                                          : p.id === "p3"
+                                            ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
+                                            : p.id === "p4"
+                                              ? "scale-[1.3] md:scale-[1.35]"
+                                              : ["p5", "p8"].includes(p.id)
+                                                ? "scale-[1.6] md:scale-[1.3]"
+                                                : ["p1b", "p1w"].includes(p.id)
+                                                  ? "scale-[1.1] sm:scale-100"
+                                                  : p.id === "p9"
+                                                    ? "scale-100 sm:scale-100"
+                                                    : "scale-[1.7] sm:scale-100"
                               }
                             />
                           </div>
@@ -232,9 +232,8 @@ export default function ShopPage() {
                         type="button"
                         aria-label={`Select ${v.color}`}
                         onClick={(e) => { e.stopPropagation(); setSelected((s) => ({ ...s, [p.id]: v.id })); }}
-                        className={`h-8 rounded-full px-3 text-xs font-medium ring-1 transition ${
-                          selected[p.id] === v.id ? "bg-black text-white ring-black/20" : "bg-gray-100 text-black hover:bg-gray-200 ring-gray-300"
-                        }`}
+                        className={`h-8 rounded-full px-3 text-xs font-medium ring-1 transition ${selected[p.id] === v.id ? "bg-black text-white ring-black/20" : "bg-gray-100 text-black hover:bg-gray-200 ring-gray-300"
+                          }`}
                       >
                         {v.color}
                       </button>
@@ -245,54 +244,30 @@ export default function ShopPage() {
                 {p.status === "available" && (
                   p.id === "raffle" ? (
                     <>
-                      {/* Mobile: tag-style pricing options for raffle */}
-                      <div className="mt-3 sm:hidden flex justify-center gap-2">
+                      {/* Mobile: simple $100 buy button */}
+                      <div className="mt-3 sm:hidden flex justify-center">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setLoadingQty(1);
-                            handleBuyClick(1);
+                            window.location.href = `/product/${p.slug}`;
                           }}
-                          className="rounded-full border border-gray-300 bg-black text-white px-3 py-1.5 text-xs font-medium transition hover:bg-black/90 active:scale-95"
+                          className="rounded-full bg-black text-white px-4 py-2 text-xs font-medium transition hover:bg-black/90 active:scale-95"
                         >
-                          {loadingQty === 1 ? "Loading..." : "+1 — $50"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setLoadingQty(4);
-                            handleBuyClick(4);
-                          }}
-                          className="rounded-full border border-gray-300 bg-gray-100 text-black px-3 py-1.5 text-xs font-medium transition hover:bg-gray-200 active:scale-95"
-                        >
-                          {loadingQty === 4 ? "Loading..." : "+4 — $100"}
+                          Buy $100
                         </button>
                       </div>
-                      {/* Desktop/tablet: raffle entry buttons */}
-                      <div className="hidden sm:mt-4 sm:grid sm:grid-cols-2 sm:gap-2">
+                      {/* Desktop/tablet: $100 buy button */}
+                      <div className="hidden sm:mt-4 sm:block">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setLoadingQty(1);
-                            handleBuyClick(1);
+                            window.location.href = `/product/${p.slug}`;
                           }}
-                          className="rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
+                          className="w-full rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
                         >
-                          {loadingQty === 1 ? "Redirecting…" : "+1 entry — $50"}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLoadingQty(4);
-                            handleBuyClick(4);
-                          }}
-                          className="rounded-full border border-gray-300 bg-gray-100 px-5 py-3 text-sm font-medium text-black transition hover:bg-gray-200"
-                        >
-                          {loadingQty === 4 ? "Redirecting…" : "+4 entries — $100"}
+                          Buy $100
                         </button>
                       </div>
                     </>
@@ -323,7 +298,7 @@ export default function ShopPage() {
             );
           })}
         </div>
-        
+
         {/* Instagram Link */}
         <div className="mt-16 mb-8 flex justify-center">
           <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-all duration-200">

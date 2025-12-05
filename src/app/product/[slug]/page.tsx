@@ -14,23 +14,23 @@ function mediaUrl(path: string) {
 // Client-only video component to prevent hydration issues
 function ClientVideo({ src, className = "" }: { src: string; alt: string; className?: string }) {
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  
+
   if (!isMounted) {
     // Show a placeholder during SSR
     return <div className={`absolute inset-0 w-full h-full object-contain bg-gray-100 ${className}`} />;
   }
-  
+
   return (
-    <video 
-      className={`absolute inset-0 w-full h-full object-cover scale-110 ${className}`} 
-      src={src} 
-      autoPlay 
-      loop 
-      muted 
+    <video
+      className={`absolute inset-0 w-full h-full object-cover scale-110 ${className}`}
+      src={src}
+      autoPlay
+      loop
+      muted
       playsInline
       key={src} // Force re-render on src change to avoid browser extension conflicts
     />
@@ -73,7 +73,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
     }
   }, [isRaffle, product]);
   const [size, setSize] = useState<string>("M");
-  const sizes = ["XS","S","M","L","XL","2XL"];
+  const sizes = ["XS", "S", "M", "L", "XL", "2XL"];
 
   return (
     <main className="min-h-screen bg-white text-black">
@@ -106,10 +106,10 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                     return (
                       <div key={i} className="flex flex-col items-center">
                         <button
-                          className={`relative aspect-square w-full rounded-lg ring-1 ${activeImage===url?"ring-black":"ring-gray-200"} overflow-hidden bg-gray-100`}
+                          className={`relative aspect-square w-full rounded-lg ring-1 ${activeImage === url ? "ring-black" : "ring-gray-200"} overflow-hidden bg-gray-100`}
                           onClick={() => setActiveImage(url)}
                         >
-                          <Media src={url} alt={`${product.name} ${i+1}`} className={`object-cover ${product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_60%]" : ""}`} />
+                          <Media src={url} alt={`${product.name} ${i + 1}`} className={`object-cover ${product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_60%]" : ""}`} />
                         </button>
                         {showLabel && (
                           <span className="mt-1 text-xs text-gray-600">{label}</span>
@@ -136,7 +136,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                             const first = v.media?.[0] ? mediaUrl(v.media[0]) : "";
                             if (first) setActiveImage(first);
                           }}
-                          className={`h-9 rounded-full px-3 text-xs font-medium ring-1 transition ${activeVariantId===v.id?"bg-black text-white ring-black/20":"bg-gray-100 text-black ring-gray-300 hover:bg-gray-200"}`}>
+                          className={`h-9 rounded-full px-3 text-xs font-medium ring-1 transition ${activeVariantId === v.id ? "bg-black text-white ring-black/20" : "bg-gray-100 text-black ring-gray-300 hover:bg-gray-200"}`}>
                           {v.color}
                         </button>
                       ))}
@@ -148,8 +148,8 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                 {(product.category === "tee" || product.category === "hoodie") && (
                   <div className="mb-6">
                     <label className="text-sm font-medium">Size</label>
-                    <select value={size} onChange={(e)=>setSize(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2">
-                      {sizes.map(s=> (
+                    <select value={size} onChange={(e) => setSize(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2">
+                      {sizes.map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
@@ -181,30 +181,17 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
 
                 {/* CTA */}
                 {isRaffle ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      onClick={() => {
-                        const selectedColor = activeVariantId ? product.variants?.find(v => v.id === activeVariantId)?.color || 'Black' : 'Black';
-                        const sizeParam = (product.category === "tee" || product.category === "hoodie") ? `&size=${encodeURIComponent(size)}` : '';
-                        const checkoutUrl = `/checkout?quantity=1&productId=${product.id}&variantId=${activeVariantId || 'raffle-blk'}&color=${encodeURIComponent(selectedColor)}${sizeParam}`;
-                        window.location.href = checkoutUrl;
-                      }}
-                      className="rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
-                    >
-                      +1 entry — $50
-                    </button>
-                    <button
-                      onClick={() => {
-                        const selectedColor = activeVariantId ? product.variants?.find(v => v.id === activeVariantId)?.color || 'Black' : 'Black';
-                        const sizeParam = (product.category === "tee" || product.category === "hoodie") ? `&size=${encodeURIComponent(size)}` : '';
-                        const checkoutUrl = `/checkout?quantity=4&productId=${product.id}&variantId=${activeVariantId || 'raffle-blk'}&color=${encodeURIComponent(selectedColor)}${sizeParam}`;
-                        window.location.href = checkoutUrl;
-                      }}
-                      className="rounded-full border border-gray-300 bg-gray-100 px-5 py-3 text-sm font-medium text-black transition hover:bg-gray-200"
-                    >
-                      +4 entries — $100
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      const selectedColor = activeVariantId ? product.variants?.find(v => v.id === activeVariantId)?.color || 'Black' : 'Black';
+                      const sizeParam = (product.category === "tee" || product.category === "hoodie") ? `&size=${encodeURIComponent(size)}` : '';
+                      const checkoutUrl = `/checkout?quantity=1&product=${product.id}&variant=${activeVariantId || 'raffle-blk'}&color=${encodeURIComponent(selectedColor)}&type=direct${sizeParam}`;
+                      window.location.href = checkoutUrl;
+                    }}
+                    className="w-full rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
+                  >
+                    Buy $100
+                  </button>
                 ) : (
                   <div className="flex gap-3">
                     <button className="rounded-full bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-60" disabled>
@@ -215,7 +202,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                 )}
               </div>
             </div>
-            
+
             {/* Instagram Link */}
             <div className="mt-16 mb-8 flex justify-center">
               <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition-all duration-200">

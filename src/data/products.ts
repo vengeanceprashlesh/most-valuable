@@ -13,18 +13,19 @@ export type Product = {
 // NOTE: Media paths intentionally match the client spec exactly.
 // A resolver in the UI maps these to real public paths.
 export const products: Product[] = [
-  // Buyable raffle product (uses /public/mainProduct.png)
+  // Buyable raffle product (converted to direct purchase)
   {
     id: "raffle",
     name: "A Valuable Shirt",
     slug: "1-of-1-raffle-tee",
     status: "available",
     category: "tee",
-    description: "Gold Rush Giveaway\nSubscribe for FREE to claim 1 entry into the Gold Rush Giveaway. 1 winner will receive a 1 of 1 shirt\nWant better odds? You can purchase extra entries for $50 each.\nIf the winner purchased at least one paid entry, they will receive the first-ever shirt backed by ¼ oz of real gold - making history as the first of its kind.\n\nThese 2 quality 9oz 1 of 1 shirts are both backed by 1/4oz of pure gold. Please allow up to 4 weeks for shipping (shirts will be custom made to order).\nUnlimited entries available",
-    media: ["/GoldRushCollection.png"],
+    price: "$100",
+    description: "A Valuable Shirt - Direct Purchase. This shirt is now available for direct purchase for $100. No raffle, no tickets, just a premium shirt.",
+    media: ["/product1_1.png", "/product1_2.png"],
     variants: [
-      { id: "raffle-blk", color: "Black", media: ["/mainProduct-black.png"] },
-      { id: "raffle-wht", color: "White", media: ["/mainProduct-white.png"] },
+      { id: "raffle-blk", color: "Black", media: ["/product1_1.png"] },
+      { id: "raffle-wht", color: "White", media: ["/product1_2.png"] },
     ],
   },
   // MV Members Only Hoodie - Direct Purchase Product
@@ -34,8 +35,8 @@ export const products: Product[] = [
     slug: "mv-members-only-hoodie",
     status: "available",
     category: "hoodie",
-    price: "$150",
-    description: "Premium Members Only Hoodie crafted for exclusivity and comfort. Direct purchase - no raffle, no tickets, just pure style.",
+    price: "$1,700",
+    description: "Premium Members Only Hoodie crafted for exclusivity and comfort. 7g of gold included.",
     media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"],
     variants: [
       { id: "mv-hoodie-blk", color: "Black", media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"] },
@@ -50,8 +51,8 @@ export const products: Product[] = [
     slug: "mv-members-only-tee",
     status: "available",
     category: "tee",
-    price: "$80",
-    description: "Exclusive Members Only Tee crafted for comfort and style. Quality 8oz shirt.",
+    price: "$350",
+    description: "Exclusive Members Only Tee crafted for comfort and style. Quality 8oz shirt. 1g of gold included.",
     media: ["/media/3A Valuable Shirt-memb1.jpeg", "/media/3A Valuable Shirt-memw1.jpeg"],
     variants: [
       { id: "mv-tee-blk", color: "Black", media: ["/media/3A Valuable Shirt-memb1.jpeg", "/media/3A Valuable Shirt-memw1.jpeg"] },
@@ -65,8 +66,8 @@ export const products: Product[] = [
     "slug": "most-valuable-box-logo-hoodie",
     "status": "available",
     "category": "hoodie",
-    "price": "$130",
-    "description": "Premium Box Logo Hoodie crafted for exclusivity and comfort. Direct purchase - no raffle, no tickets, just pure style.",
+    "price": "$1,700",
+    "description": "Premium Box Logo Hoodie crafted for exclusivity and comfort. 7g of gold included.",
     "media": ["/media/6Most Valuable box Logo Hoodie1.jpeg"]
   },
   {
@@ -75,8 +76,8 @@ export const products: Product[] = [
     "slug": "mv-traditional-hoodie",
     "status": "available",
     "category": "hoodie",
-    "price": "$150",
-    "description": "Classic MV Traditional Hoodie with premium quality and timeless design. Direct purchase available.",
+    "price": "$1,700",
+    "description": "Classic MV Traditional Hoodie with premium quality and timeless design. 7g of gold included.",
     "media": ["/Hoodie.png"]
   },
   {
@@ -85,8 +86,8 @@ export const products: Product[] = [
     "slug": "box-logo-tee-black",
     "status": "available",
     "category": "tee",
-    "price": "$100",
-    "description": "Iconic Box Logo Tee in premium black. Direct purchase - no raffle, get yours now.",
+    "price": "$350",
+    "description": "Iconic Box Logo Tee in premium black. 1g of gold included.",
     "media": ["/media/1A Valuable Shirt-b1.png", "/media/2A Valuable Shirt-b2.png"]
   },
   {
@@ -95,8 +96,8 @@ export const products: Product[] = [
     "slug": "box-logo-tee-white",
     "status": "available",
     "category": "tee",
-    "price": "$100",
-    "description": "Iconic Box Logo Tee in classic white. Direct purchase - no raffle, get yours now.",
+    "price": "$350",
+    "description": "Iconic Box Logo Tee in classic white. 1g of gold included.",
     "media": ["/media/1A Valuable Shirt-w1.png", "/media/2A Valuable Shirt2.png"]
   },
   // Rest of the products
@@ -124,7 +125,7 @@ export const products: Product[] = [
     "slug": "mv-camo-slides",
     "status": "sold_out",
     "category": "slides",
-    "price": "$150",
+    "price": "$1,700",
     "media": ["/media/8MV camo slides.MOV"]
   },
   {
@@ -133,7 +134,7 @@ export const products: Product[] = [
     "slug": "mv-reversible-shorts",
     "status": "sold_out",
     "category": "shorts",
-    "price": "$150",
+    "price": "$1,700",
     "media": ["/MV Reversible Shorts-f.png", "/MV Reversible Shorts-b.png"]
   }
 ];

@@ -41,47 +41,52 @@ export const createCheckoutSession: any = action({
     const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
     // Determine if this is a direct purchase or raffle entry
-    const isDirectPurchase = args.purchaseType === "direct" || 
-                             args.productId === "mv-hoodie" || 
-                             args.productId === "mv-tee" ||
-                             args.productId === "p6" || 
-                             args.productId === "p7" ||
-                             args.productId === "p1b" || 
-                             args.productId === "p1w";
-    
+    const isDirectPurchase = args.purchaseType === "direct" ||
+      args.productId === "raffle" ||
+      args.productId === "mv-hoodie" ||
+      args.productId === "mv-tee" ||
+      args.productId === "p6" ||
+      args.productId === "p7" ||
+      args.productId === "p1b" ||
+      args.productId === "p1w";
+
     // Calculate pricing based on purchase type
     let unitAmount: number;
     let productName: string;
     let productDescription: string;
-    
+
     if (isDirectPurchase) {
       // Direct purchase pricing
       if (args.productId === "mv-hoodie") {
-        unitAmount = 15000; // $150.00 in cents
+        unitAmount = 170000; // $1,700.00 in cents
         productName = "MV Members Only Hoodie";
-        productDescription = `Premium hoodie - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Premium hoodie - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'}) - 7g Gold Included`;
       } else if (args.productId === "mv-tee") {
-        unitAmount = 8000; // $80.00 in cents
+        unitAmount = 35000; // $350.00 in cents
         productName = "MV Members Only Tee";
-        productDescription = `Exclusive tee - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Exclusive tee - ${args.selectedColor || 'Black'} (Size: ${args.selectedSize || 'M'}) - 1g Gold Included`;
       } else if (args.productId === "p6") {
-        unitAmount = 13000; // $130.00 in cents
+        unitAmount = 170000; // $1,700.00 in cents
         productName = "Most Valuable Box Logo Hoodie";
-        productDescription = `Premium box logo hoodie (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Premium box logo hoodie (Size: ${args.selectedSize || 'M'}) - 7g Gold Included`;
       } else if (args.productId === "p7") {
-        unitAmount = 15000; // $150.00 in cents
+        unitAmount = 170000; // $1,700.00 in cents
         productName = "MV Traditional Hoodie";
-        productDescription = `Traditional MV hoodie (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Traditional MV hoodie (Size: ${args.selectedSize || 'M'}) - 7g Gold Included`;
       } else if (args.productId === "p1b") {
-        unitAmount = 10000; // $100.00 in cents
+        unitAmount = 35000; // $350.00 in cents
         productName = "Box Logo Tee - Black";
-        productDescription = `Iconic box logo tee in black (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Iconic box logo tee in black (Size: ${args.selectedSize || 'M'}) - 1g Gold Included`;
       } else if (args.productId === "p1w") {
-        unitAmount = 10000; // $100.00 in cents
+        unitAmount = 35000; // $350.00 in cents
         productName = "Box Logo Tee - White";
-        productDescription = `Iconic box logo tee in white (Size: ${args.selectedSize || 'M'})`;
+        productDescription = `Iconic box logo tee in white (Size: ${args.selectedSize || 'M'}) - 1g Gold Included`;
+      } else if (args.productId === "raffle") {
+        unitAmount = 10000; // $100.00 in cents
+        productName = "A Valuable Shirt";
+        productDescription = `A Valuable Shirt (Size: ${args.selectedSize || 'M'}) - Direct Purchase`;
       } else {
-        unitAmount = 15000; // Default direct purchase price - $150.00 in cents
+        unitAmount = 170000; // Default direct purchase price - $1,700.00 in cents
         productName = "Direct Purchase";
         productDescription = "Premium collection item";
       }
@@ -97,7 +102,7 @@ export const createCheckoutSession: any = action({
       // Use internal config to access paymentStartDate
       const raffleInternal = await ctx.runQuery(api.payments.getRaffleConfigInternal);
       const paymentStart = raffleInternal?.paymentStartDate || raffle.startDate;
-      
+
       // For payments: check paymentStartDate vs endDate
       // This allows payments to work even if timer display hasn't started yet
       if (now < paymentStart || now > raffle.endDate) {
@@ -215,7 +220,7 @@ export const handleStripeWebhook: any = action({
           if (!sessionId) {
             throw new Error('Session ID required for checkout.session.completed');
           }
-          
+
           return await ctx.runMutation(api.payments.handlePaymentSuccess, {
             stripeSessionId: sessionId,
             stripePaymentIntent: paymentIntentId || '',
@@ -228,7 +233,7 @@ export const handleStripeWebhook: any = action({
             console.log('No session ID for failed payment event');
             return { success: true, message: 'No session to process' };
           }
-          
+
           return await ctx.runMutation(api.payments.handlePaymentFailure, {
             stripeSessionId: sessionId,
             webhookEventId: eventId,
@@ -241,14 +246,14 @@ export const handleStripeWebhook: any = action({
       }
     } catch (error: any) {
       console.error(`Webhook processing error for ${eventId}:`, error);
-      
+
       // Log failed webhook for manual review
       await ctx.runMutation(api.payments.handlePaymentFailure, {
         stripeSessionId: sessionId || 'unknown',
         webhookEventId: eventId,
         errorMessage: `Webhook processing failed: ${error.message}`,
       });
-      
+
       throw error;
     }
   },
@@ -335,7 +340,7 @@ export const getStripeStats = action({
     try {
       // Get recent payments (last 30 days)
       const thirtyDaysAgo = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000);
-      
+
       const charges = await stripe.charges.list({
         created: { gte: thirtyDaysAgo },
         limit: 100,

@@ -30,15 +30,15 @@ function CheckoutPageContent() {
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [addressErrors, setAddressErrors] = useState<{[key: string]: string}>({});
-  
+  const [addressErrors, setAddressErrors] = useState<{ [key: string]: string }>({});
+
   // Product selection states
   const [productId, setProductId] = useState<string>("");
   const [variantId, setVariantId] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [purchaseType, setPurchaseType] = useState<string>(""); // "raffle" or "direct"
-  
+
   // Shipping address state
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     firstName: '',
@@ -61,14 +61,14 @@ function CheckoutPageContent() {
         setQuantity(parsedQty);
       }
     }
-    
+
     // Capture product selection parameters
     const productIdParam = searchParams.get("product");
     const variantIdParam = searchParams.get("variant");
     const colorParam = searchParams.get("color");
     const sizeParam = searchParams.get("size");
     const typeParam = searchParams.get("type");
-    
+
     if (productIdParam) setProductId(productIdParam);
     if (variantIdParam) setVariantId(variantIdParam);
     if (colorParam) setSelectedColor(colorParam);
@@ -77,44 +77,48 @@ function CheckoutPageContent() {
   }, [searchParams]);
 
   // Determine if this is a direct purchase or raffle entry
-  const isDirectPurchase = purchaseType === "direct" || 
-                          productId === "mv-hoodie" || 
-                          productId === "mv-tee" ||
-                          productId === "p6" || 
-                          productId === "p7" ||
-                          productId === "p1b" || 
-                          productId === "p1w";
-  
+  const isDirectPurchase = purchaseType === "direct" ||
+    productId === "raffle" ||
+    productId === "mv-hoodie" ||
+    productId === "mv-tee" ||
+    productId === "p6" ||
+    productId === "p7" ||
+    productId === "p1b" ||
+    productId === "p1w";
+
   // Calculate pricing based on purchase type
   let price: number;
   let savings = "";
   let productName = "";
-  
+
   // Define isBundle for both purchase types
   const isBundle = !isDirectPurchase && quantity === 4;
-  
+
   if (isDirectPurchase) {
     // Direct purchase pricing
     if (productId === "mv-hoodie") {
-      price = 150; // $150 for MV Members Only Hoodie
+      price = 1700; // $1,700 for MV Members Only Hoodie (7g gold)
       productName = "MV Members Only Hoodie";
     } else if (productId === "mv-tee") {
-      price = 80; // $80 for MV Members Only Tee
+      price = 350; // $350 for MV Members Only Tee (1g gold)
       productName = "MV Members Only Tee";
     } else if (productId === "p6") {
-      price = 130; // $130 for Most Valuable Box Logo Hoodie
+      price = 1700; // $1,700 for Most Valuable Box Logo Hoodie (7g gold)
       productName = "Most Valuable Box Logo Hoodie";
     } else if (productId === "p7") {
-      price = 150; // $150 for MV Traditional Hoodie
+      price = 1700; // $1,700 for MV Traditional Hoodie (7g gold)
       productName = "MV Traditional Hoodie";
     } else if (productId === "p1b") {
-      price = 100; // $100 for Box Logo Tee - Black
+      price = 350; // $350 for Box Logo Tee - Black (1g gold)
       productName = "Box Logo Tee - Black";
     } else if (productId === "p1w") {
-      price = 100; // $100 for Box Logo Tee - White
+      price = 350; // $350 for Box Logo Tee - White (1g gold)
       productName = "Box Logo Tee - White";
+    } else if (productId === "raffle") {
+      price = 100; // $100 for First Shirt (A Valuable Shirt)
+      productName = "A Valuable Shirt";
     } else {
-      price = 150; // Default direct purchase price
+      price = 1700; // Default direct purchase price
       productName = "Direct Purchase";
     }
   } else {
@@ -128,7 +132,7 @@ function CheckoutPageContent() {
   const isEmailValid = (emailValue: string) => {
     const trimmed = emailValue.trim();
     if (!trimmed) return false;
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(trimmed);
   };
@@ -140,12 +144,12 @@ function CheckoutPageContent() {
       setEmailError("");
       return false;
     }
-    
+
     if (!isEmailValid(trimmed)) {
       setEmailError("Please enter a valid email address");
       return false;
     }
-    
+
     setEmailError("");
     return true;
   };
@@ -154,7 +158,7 @@ function CheckoutPageContent() {
     const value = e.target.value;
     setEmail(value);
     setError(""); // Clear general error when user starts typing
-    
+
     // Only validate if user has typed something
     if (value.length > 0) {
       validateEmailWithState(value);
@@ -165,8 +169,8 @@ function CheckoutPageContent() {
 
   // Address validation
   const validateAddress = () => {
-    const errors: {[key: string]: string} = {};
-    
+    const errors: { [key: string]: string } = {};
+
     if (!shippingAddress.firstName.trim()) {
       errors.firstName = 'First name is required';
     }
@@ -185,20 +189,20 @@ function CheckoutPageContent() {
     if (!shippingAddress.postalCode.trim()) {
       errors.postalCode = 'Postal code is required';
     }
-    
+
     // Phone number validation (mandatory for both contact and delivery)
     const currentPhone = phone || shippingAddress.phone || '';
     if (!currentPhone.trim()) {
       errors.phone = 'Phone number is required';
     }
-    
+
     setAddressErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
     setShippingAddress(prev => ({ ...prev, [field]: value }));
-    
+
     // Sync phone numbers between contact and shipping forms
     if (field === 'phone') {
       setPhone(value);
@@ -211,7 +215,7 @@ function CheckoutPageContent() {
         });
       }
     }
-    
+
     // Clear specific field error when user starts typing
     if (addressErrors[field]) {
       setAddressErrors(prev => {
@@ -241,23 +245,23 @@ function CheckoutPageContent() {
     const trimmedEmail = email.trim();
     const emailValid = trimmedEmail.length > 0 && isEmailValid(trimmedEmail);
     const phoneValid = (phone || shippingAddress.phone || '').trim().length > 0;
-    const addressValid = shippingAddress.firstName.trim() && 
-                        shippingAddress.lastName.trim() && 
-                        shippingAddress.address1.trim() && 
-                        shippingAddress.city.trim() && 
-                        shippingAddress.state.trim() && 
-                        shippingAddress.postalCode.trim();
+    const addressValid = shippingAddress.firstName.trim() &&
+      shippingAddress.lastName.trim() &&
+      shippingAddress.address1.trim() &&
+      shippingAddress.city.trim() &&
+      shippingAddress.state.trim() &&
+      shippingAddress.postalCode.trim();
     return emailValid && phoneValid && addressValid && !isLoading;
   };
 
   async function handleCheckout(e?: React.FormEvent) {
     e?.preventDefault();
-    
+
     console.log("🚀 Starting checkout process...");
     console.log("📧 Email:", email);
     console.log("📱 Phone:", phone);
     console.log("🔢 Quantity:", quantity);
-    
+
     // Clear previous errors
     setError("");
     setEmailError("");
@@ -295,7 +299,7 @@ function CheckoutPageContent() {
 
     try {
       console.log("📡 Making API request to /api/checkout...");
-      
+
       const requestBody = {
         quantity,
         email: trimmedEmail.toLowerCase(),
@@ -309,12 +313,12 @@ function CheckoutPageContent() {
         // Shipping address
         shippingAddress,
       };
-      
+
       console.log("📦 Request body:", requestBody);
-      
+
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
@@ -332,15 +336,15 @@ function CheckoutPageContent() {
 
       const data = await res.json();
       console.log("✅ API Response:", data);
-      
+
       if (data.url) {
         console.log("🔗 Redirecting to:", data.url);
-        
+
         // Enhanced mobile redirect with fallback
         try {
           // For mobile devices, add a small delay to ensure proper rendering
           const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
-          
+
           if (isMobile) {
             console.log("📱 Mobile device detected - optimizing redirect");
             setTimeout(() => {
@@ -354,7 +358,7 @@ function CheckoutPageContent() {
           // Fallback: try to open in new window
           window.open(data.url, '_self');
         }
-        
+
         return; // Don't reset loading state since we're redirecting
       } else {
         console.error("❌ No checkout URL in response:", data);
@@ -362,9 +366,9 @@ function CheckoutPageContent() {
       }
     } catch (error) {
       console.error("❌ Checkout error:", error);
-      
+
       let errorMessage = "Something went wrong. Please try again.";
-      
+
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
           errorMessage = "Unable to connect to payment system. Please check your internet connection and try again.";
@@ -374,7 +378,7 @@ function CheckoutPageContent() {
           errorMessage = error.message || errorMessage;
         }
       }
-      
+
       setError(errorMessage);
       setIsLoading(false);
     }
@@ -475,13 +479,13 @@ function CheckoutPageContent() {
                 <div className="mt-2 flex items-center space-x-4">
                   {selectedColor && (
                     <span className="text-xs text-slate-300">
-                      <span className="text-slate-400">Color:</span> 
+                      <span className="text-slate-400">Color:</span>
                       <span className="text-white font-medium capitalize ml-1">{selectedColor}</span>
                     </span>
                   )}
                   {selectedSize && (
                     <span className="text-xs text-slate-300">
-                      <span className="text-slate-400">Size:</span> 
+                      <span className="text-slate-400">Size:</span>
                       <span className="text-white font-medium ml-1">{selectedSize}</span>
                     </span>
                   )}
@@ -508,12 +512,12 @@ function CheckoutPageContent() {
         <div className="max-w-7xl mx-auto">
           <form onSubmit={handleCheckout}>
             <div className="grid lg:grid-cols-2 gap-8">
-              
+
               {/* Left Side - Email Collection */}
               <div className="space-y-6">
                 <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
                   <h2 className="text-xl font-semibold mb-6">Contact Information</h2>
-                  
+
                   {/* Why Email Info */}
                   <div className="mb-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                     <div className="flex items-start space-x-3">
@@ -542,9 +546,8 @@ function CheckoutPageContent() {
                         value={email}
                         onChange={handleEmailChange}
                         placeholder="your@email.com"
-                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                          emailError ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                        }`}
+                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${emailError ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                          }`}
                         required
                         disabled={isLoading}
                         autoComplete="email"
@@ -562,9 +565,8 @@ function CheckoutPageContent() {
                         value={phone || shippingAddress.phone || ''}
                         onChange={(e) => handleContactPhoneChange(e.target.value)}
                         placeholder="+1 (555) 123-4567"
-                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                          addressErrors.phone ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                        }`}
+                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.phone ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                          }`}
                         required
                         disabled={isLoading}
                         autoComplete="tel"
@@ -586,7 +588,7 @@ function CheckoutPageContent() {
                     </svg>
                     <h2 className="text-xl font-semibold">Shipping Address</h2>
                   </div>
-                  
+
                   {/* Address Trust Signal */}
                   <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                     <div className="flex items-start space-x-3">
@@ -617,16 +619,15 @@ function CheckoutPageContent() {
                           value={shippingAddress.firstName}
                           onChange={(e) => handleAddressChange('firstName', e.target.value)}
                           placeholder="John"
-                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                            addressErrors.firstName ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                          }`}
+                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.firstName ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                            }`}
                           required
                           disabled={isLoading}
                           autoComplete="given-name"
                         />
                         {addressErrors.firstName && <p className="text-xs text-red-400 mt-1">{addressErrors.firstName}</p>}
                       </div>
-                      
+
                       <div>
                         <label htmlFor="lastName" className="block text-sm font-medium text-white mb-2">
                           Last Name <span className="text-red-400">*</span>
@@ -637,9 +638,8 @@ function CheckoutPageContent() {
                           value={shippingAddress.lastName}
                           onChange={(e) => handleAddressChange('lastName', e.target.value)}
                           placeholder="Doe"
-                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                            addressErrors.lastName ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                          }`}
+                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.lastName ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                            }`}
                           required
                           disabled={isLoading}
                           autoComplete="family-name"
@@ -676,9 +676,8 @@ function CheckoutPageContent() {
                         value={shippingAddress.address1}
                         onChange={(e) => handleAddressChange('address1', e.target.value)}
                         placeholder="123 Main Street"
-                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                          addressErrors.address1 ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                        }`}
+                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.address1 ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                          }`}
                         required
                         disabled={isLoading}
                         autoComplete="address-line1"
@@ -714,16 +713,15 @@ function CheckoutPageContent() {
                           value={shippingAddress.city}
                           onChange={(e) => handleAddressChange('city', e.target.value)}
                           placeholder="New York"
-                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                            addressErrors.city ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                          }`}
+                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.city ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                            }`}
                           required
                           disabled={isLoading}
                           autoComplete="address-level2"
                         />
                         {addressErrors.city && <p className="text-xs text-red-400 mt-1">{addressErrors.city}</p>}
                       </div>
-                      
+
                       <div>
                         <label htmlFor="state" className="block text-sm font-medium text-white mb-2">
                           State <span className="text-red-400">*</span>
@@ -732,9 +730,8 @@ function CheckoutPageContent() {
                           id="state"
                           value={shippingAddress.state}
                           onChange={(e) => handleAddressChange('state', e.target.value)}
-                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                            addressErrors.state ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                          }`}
+                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.state ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                            }`}
                           required
                           disabled={isLoading}
                           autoComplete="address-level1"
@@ -747,7 +744,7 @@ function CheckoutPageContent() {
                         </select>
                         {addressErrors.state && <p className="text-xs text-red-400 mt-1">{addressErrors.state}</p>}
                       </div>
-                      
+
                       <div>
                         <label htmlFor="postalCode" className="block text-sm font-medium text-white mb-2">
                           Zip Code <span className="text-red-400">*</span>
@@ -758,9 +755,8 @@ function CheckoutPageContent() {
                           value={shippingAddress.postalCode}
                           onChange={(e) => handleAddressChange('postalCode', e.target.value)}
                           placeholder="10001"
-                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                            addressErrors.postalCode ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                          }`}
+                          className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.postalCode ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                            }`}
                           required
                           disabled={isLoading}
                           autoComplete="postal-code"
@@ -780,9 +776,8 @@ function CheckoutPageContent() {
                         value={shippingAddress.phone || phone || ''}
                         onChange={(e) => handleAddressChange('phone', e.target.value)}
                         placeholder="+1 (555) 123-4567"
-                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                          addressErrors.phone ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
-                        }`}
+                        className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${addressErrors.phone ? 'border-red-400 focus:ring-red-500' : 'border-white/20 focus:ring-blue-500'
+                          }`}
                         required
                         disabled={isLoading}
                         autoComplete="tel"
@@ -822,11 +817,10 @@ function CheckoutPageContent() {
               <button
                 type="submit"
                 disabled={isLoading || !isFormValid()}
-                className={`w-full px-8 py-4 font-semibold rounded-lg transition-all duration-200 ${
-                  isLoading || !isFormValid()
-                    ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
+                className={`w-full px-8 py-4 font-semibold rounded-lg transition-all duration-200 ${isLoading || !isFormValid()
+                    ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transform hover:scale-105 shadow-lg hover:shadow-xl'
-                }`}
+                  }`}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
@@ -837,7 +831,7 @@ function CheckoutPageContent() {
                   `Complete Purchase - $${price}`
                 )}
               </button>
-              
+
               {/* Trust Signals */}
               <div className="mt-4 text-center">
                 <div className="flex items-center justify-center space-x-4 text-xs text-slate-400">

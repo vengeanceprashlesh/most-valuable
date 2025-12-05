@@ -55,31 +55,34 @@ export const createPendingEntry = mutation({
     }
 
     // Determine if this is a direct purchase or raffle entry
-    const isDirectPurchase = productId === "mv-hoodie" || 
-                             productId === "mv-tee" ||
-                             productId === "p6" || 
-                             productId === "p7" ||
-                             productId === "p1b" || 
-                             productId === "p1w";
-    
+    const isDirectPurchase = productId === "raffle" ||
+      productId === "mv-hoodie" ||
+      productId === "mv-tee" ||
+      productId === "p6" ||
+      productId === "p7" ||
+      productId === "p1b" ||
+      productId === "p1w";
+
     let amount: number;
-    
+
     if (isDirectPurchase) {
       // Direct purchase pricing - calculate from product ID
       if (productId === "mv-hoodie") {
-        amount = 15000; // $150.00 in cents
+        amount = 170000; // $1,700.00 in cents
       } else if (productId === "mv-tee") {
-        amount = 8000; // $80.00 in cents
+        amount = 35000; // $350.00 in cents
       } else if (productId === "p6") {
-        amount = 13000; // $130.00 in cents
+        amount = 170000; // $1,700.00 in cents
       } else if (productId === "p7") {
-        amount = 15000; // $150.00 in cents
+        amount = 170000; // $1,700.00 in cents
       } else if (productId === "p1b") {
-        amount = 10000; // $100.00 in cents
+        amount = 35000; // $350.00 in cents
       } else if (productId === "p1w") {
+        amount = 35000; // $350.00 in cents
+      } else if (productId === "raffle") {
         amount = 10000; // $100.00 in cents
       } else {
-        amount = 15000; // Default direct purchase price
+        amount = 170000; // Default direct purchase price
       }
     } else {
       // Raffle entry pricing - need raffle config
@@ -95,7 +98,7 @@ export const createPendingEntry = mutation({
       // Check if raffle is accepting entries (use paymentStartDate for payments)
       const now = Date.now();
       const paymentStart = activeRaffle.paymentStartDate || activeRaffle.startDate;
-      
+
       // For payments: check paymentStartDate vs endDate
       // This allows payments to work even if timer hasn't started yet
       if (now < paymentStart || now > activeRaffle.endDate) {
@@ -176,12 +179,13 @@ export const handlePaymentSuccess = mutation({
     });
 
     // Determine if this is a direct purchase or raffle entry
-    const isDirectPurchase = entry.productId === "mv-hoodie" || 
-                             entry.productId === "mv-tee" ||
-                             entry.productId === "p6" || 
-                             entry.productId === "p7" ||
-                             entry.productId === "p1b" || 
-                             entry.productId === "p1w";
+    const isDirectPurchase = entry.productId === "raffle" ||
+      entry.productId === "mv-hoodie" ||
+      entry.productId === "mv-tee" ||
+      entry.productId === "p6" ||
+      entry.productId === "p7" ||
+      entry.productId === "p1b" ||
+      entry.productId === "p1w";
 
     // Only update raffle entries for actual raffle purchases
     if (!isDirectPurchase) {
@@ -229,17 +233,17 @@ export const handlePaymentSuccess = mutation({
 
     // Queue confirmation email for processing
     try {
-      const emailSubject = isDirectPurchase 
-        ? `🛒 Order Confirmed - ${entry.productId ? getProductName(entry.productId) : 'Your Purchase'}` 
+      const emailSubject = isDirectPurchase
+        ? `🛒 Order Confirmed - ${entry.productId ? getProductName(entry.productId) : 'Your Purchase'}`
         : `🏆 Gold Rush Entry Confirmed - ${entry.count} ${entry.count === 1 ? 'Entry' : 'Entries'} Secured`;
-      
+
       await ctx.runMutation(api.emailLogs.createEmailLog, {
         to: entry.email,
         subject: emailSubject,
         message: isDirectPurchase ? 'Order confirmation email - queued for sending' : 'Purchase confirmation email - queued for sending',
-        data: JSON.stringify({ 
-          entryId: entry._id, 
-          count: entry.count, 
+        data: JSON.stringify({
+          entryId: entry._id,
+          count: entry.count,
           type: isDirectPurchase ? 'order_confirmation' : 'purchase_confirmation',
           productId: entry.productId,
           size: entry.size,
@@ -268,11 +272,11 @@ export const handlePaymentSuccess = mutation({
       // Don't fail the payment processing if notification fails
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       entryId: entry._id,
       email: entry.email,
-      count: entry.count 
+      count: entry.count
     };
   },
 });
@@ -330,10 +334,10 @@ export const handlePaymentFailure = mutation({
 
     console.log(`Payment failed for ${entry.email}: ${errorMessage}`);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       entryId: entry._id,
-      email: entry.email 
+      email: entry.email
     };
   },
 });
@@ -342,13 +346,13 @@ export const handlePaymentFailure = mutation({
  * Get payment events for debugging (admin only)
  */
 export const getPaymentEvents = query({
-  args: { 
+  args: {
     limit: v.optional(v.number()),
     eventType: v.optional(v.string())
   },
   handler: async (ctx, { limit = 50, eventType }) => {
     let query = ctx.db.query("paymentEvents").order("desc");
-    
+
     if (eventType) {
       query = query.filter((q) => q.eq(q.field("eventType"), eventType));
     }
