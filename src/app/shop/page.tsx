@@ -53,13 +53,13 @@ function ClientVideo({ src, className = "" }: { src: string; alt: string; classN
   );
 }
 
-function Media({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+function Media({ src, alt, className = "", style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
   const url = mediaUrl(src);
   const isVideo = /\.(mp4|mov)$/i.test(url);
   return isVideo ? (
     <ClientVideo src={url} alt={alt} className={className} />
   ) : (
-    <Image src={url} alt={alt} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className={`object-contain ${className}`} />
+    <Image src={url} alt={alt} fill sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw" className={`object-contain ${className}`} style={style} />
   );
 }
 
@@ -151,8 +151,8 @@ export default function ShopPage() {
                               src={m}
                               alt={p.name}
                               className={
-                                // Check if this is the AI-generated image and apply different scaling
-                                m.includes("/AI-generated/A valuable Shirt.png") || m.includes("/AI-generated/Valuable whote t shirt.png")
+                                // Check if this is any AI-generated image and apply different scaling
+                                m.includes("/AI-generated/")
                                   ? "scale-100 object-contain"
                                   : p.id === "raffle"
                                     ? "scale-[1.7] md:scale-[1.3] object-[50%_60%] sm:object-center"

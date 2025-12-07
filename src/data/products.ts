@@ -37,9 +37,9 @@ export const products: Product[] = [
     category: "hoodie",
     price: "$1,700",
     description: "Premium Members Only Hoodie crafted for exclusivity and comfort. 7g of gold included.",
-    media: ["/MV Members only hoodie-b.png", "/AI-generated/MV Black Hoodie.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png", "/AI-generated/Member Hoodie.png"],
+    media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png", "/AI-generated/Member Hoodie.png"],
     variants: [
-      { id: "mv-hoodie-blk", color: "Black", media: ["/MV Members only hoodie-b.png", "/AI-generated/MV Black Hoodie.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"] },
+      { id: "mv-hoodie-blk", color: "Black", media: ["/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-g.png"] },
       { id: "mv-hoodie-wht", color: "White", media: ["/MV Members only hoodie-w.jpeg", "/MV Members only hoodie-b.png", "/MV Members only hoodie-g.png"] },
       { id: "mv-hoodie-gry", color: "Gray", media: ["/MV Members only hoodie-g.png", "/AI-generated/Member Hoodie.png", "/MV Members only hoodie-b.png", "/MV Members only hoodie-w.jpeg"] },
     ],
@@ -78,7 +78,7 @@ export const products: Product[] = [
     "category": "hoodie",
     "price": "$1,700",
     "description": "Classic MV Traditional Hoodie with premium quality and timeless design. 7g of gold included.",
-    "media": ["/Hoodie.png", "/AI-generated/Most Valuable Hoodie.png"]
+    "media": ["/Hoodie.png", "/AI-generated/MV Black Hoodie.png"]
   },
   {
     "id": "p1b",
