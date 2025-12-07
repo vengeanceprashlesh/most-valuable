@@ -151,25 +151,28 @@ export default function ShopPage() {
                               src={m}
                               alt={p.name}
                               className={
-                                p.id === "raffle"
-                                  ? "scale-[1.7] md:scale-[1.3] object-[50%_60%] sm:object-center"
-                                  : p.id === "mv-hoodie"
-                                    ? "scale-[1.7] md:scale-[1.5] object-center"
-                                    : p.id === "mv-tee"
-                                      ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
-                                      : p.id === "p6"
-                                        ? "scale-[1.7] md:scale-[1.4]"
-                                        : p.id === "p7"
-                                          ? "scale-[1.7] md:scale-[1.4] object-[60%_50%]"
-                                          : p.id === "p3"
-                                            ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
-                                            : p.id === "p4"
-                                              ? "scale-[1.3] md:scale-[1.35]"
-                                              : p.id === "p5"
-                                                ? "scale-[1.6] md:scale-[1.3]"
-                                                : ["p1b", "p1w"].includes(p.id)
-                                                  ? "scale-[1.1] sm:scale-100"
-                                                  : "scale-[1.7] sm:scale-100"
+                                // Check if this is the AI-generated image and apply different scaling
+                                m.includes("/AI-generated/A valuable Shirt.png") || m.includes("/AI-generated/Valuable whote t shirt.png")
+                                  ? "scale-100 object-contain"
+                                  : p.id === "raffle"
+                                    ? "scale-[1.7] md:scale-[1.3] object-[50%_60%] sm:object-center"
+                                    : p.id === "mv-hoodie"
+                                      ? "scale-[1.7] md:scale-[1.5] object-center"
+                                      : p.id === "mv-tee"
+                                        ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
+                                        : p.id === "p6"
+                                          ? "scale-[1.7] md:scale-[1.4]"
+                                          : p.id === "p7"
+                                            ? "scale-[1.7] md:scale-[1.4] object-[60%_50%]"
+                                            : p.id === "p3"
+                                              ? "scale-[2.1] md:scale-[1.35] object-[50%_60%] sm:object-center"
+                                              : p.id === "p4"
+                                                ? "scale-[1.3] md:scale-[1.35]"
+                                                : p.id === "p5"
+                                                  ? "scale-[1.6] md:scale-[1.3]"
+                                                  : ["p1b", "p1w"].includes(p.id)
+                                                    ? "scale-[1.1] sm:scale-100"
+                                                    : "scale-[1.7] sm:scale-100"
                               }
                             />
                           </div>
