@@ -37,13 +37,13 @@ function ClientVideo({ src, className = "" }: { src: string; alt: string; classN
   );
 }
 
-function Media({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+function Media({ src, alt, className = "", style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
   const url = mediaUrl(src);
   const isVideo = /\.(mp4|mov)$/i.test(url);
   return isVideo ? (
     <ClientVideo src={url} alt={alt} className={className} />
   ) : (
-    <Image src={url} alt={alt} fill className={className} />
+    <Image src={url} alt={alt} fill className={className} style={style} />
   );
 }
 
@@ -94,7 +94,11 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
               <div>
                 <div className="relative w-full aspect-square rounded-xl bg-white ring-1 ring-gray-200 overflow-hidden">
                   {activeImage && (
-                    <Media src={activeImage} alt={product.name} className={`object-contain ${product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_50%]" : ""}`} />
+                    <Media
+                      src={activeImage}
+                      alt={product.name}
+                      className={`object-contain ${activeImage.includes("/AI-generated/") ? "scale-100" : product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_50%]" : ""}`}
+                    />
                   )}
                 </div>
                 {/* Thumbs */}
@@ -109,7 +113,11 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                           className={`relative aspect-square w-full rounded-lg ring-1 ${activeImage === url ? "ring-black" : "ring-gray-200"} overflow-hidden bg-gray-100`}
                           onClick={() => setActiveImage(url)}
                         >
-                          <Media src={url} alt={`${product.name} ${i + 1}`} className={`object-cover ${product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_60%]" : ""}`} />
+                          <Media
+                            src={url}
+                            alt={`${product.name} ${i + 1}`}
+                            className={`object-cover ${url.includes("/AI-generated/") ? "scale-100" : product.id === "p7" ? "scale-[1.3] md:scale-[1.4] object-[60%_60%]" : ""}`}
+                          />
                         </button>
                         {showLabel && (
                           <span className="mt-1 text-xs text-gray-600">{label}</span>
@@ -122,13 +130,19 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
 
               {/* Info */}
               <div>
-                <h1 className="text-2xl font-semibold mb-2">{product.name}</h1>
-                <p className="text-sm text-gray-700 mb-4">{product.description || product.category}</p>
+                <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.name}</h1>
+
+                {/* Price - prominent display */}
+                {product.price && (
+                  <p className="text-3xl md:text-4xl font-normal mb-6">{product.price}</p>
+                )}
+
+                <p className="text-base text-gray-600 mb-8">{product.description || product.category}</p>
 
                 {product.variants?.length ? (
                   <div className="mb-6">
-                    <label className="text-sm font-medium">Color</label>
-                    <div className="mt-2 flex gap-2">
+                    <label className="text-base font-medium block mb-3">Color</label>
+                    <div className="flex gap-2 flex-wrap">
                       {product.variants.map(v => (
                         <button key={v.id}
                           onClick={() => {
@@ -136,7 +150,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                             const first = v.media?.[0] ? mediaUrl(v.media[0]) : "";
                             if (first) setActiveImage(first);
                           }}
-                          className={`h-9 rounded-full px-3 text-xs font-medium ring-1 transition ${activeVariantId === v.id ? "bg-black text-white ring-black/20" : "bg-gray-100 text-black ring-gray-300 hover:bg-gray-200"}`}>
+                          className={`h-10 rounded-full px-4 text-sm font-medium ring-1 transition ${activeVariantId === v.id ? "bg-black text-white ring-black/20" : "bg-white text-black ring-gray-300 hover:bg-gray-50"}`}>
                           {v.color}
                         </button>
                       ))}
@@ -144,38 +158,24 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                   </div>
                 ) : null}
 
-                {/* Size selector - only show for tees and hoodies */}
+                {/* Size selector - button style for tees and hoodies only */}
                 {(product.category === "tee" || product.category === "hoodie") && (
-                  <div className="mb-6">
-                    <label className="text-sm font-medium">Size</label>
-                    <select value={size} onChange={(e) => setSize(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2">
+                  <div className="mb-8">
+                    <label className="text-base font-medium block mb-3">Size</label>
+                    <div className="grid grid-cols-5 gap-2">
                       {sizes.map(s => (
-                        <option key={s} value={s}>{s}</option>
+                        <button
+                          key={s}
+                          onClick={() => setSize(s)}
+                          className={`h-12 rounded-lg border-2 text-sm font-medium transition ${size === s
+                            ? "border-black bg-white text-black"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                            }`}
+                        >
+                          {s}
+                        </button>
                       ))}
-                    </select>
-                    <details className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      <summary className="cursor-pointer text-sm font-medium">Size chart</summary>
-                      <div className="mt-2 text-xs text-gray-700">
-                        <div className="grid grid-cols-6 gap-2">
-                          <div className="font-semibold">Size</div>
-                          <div className="font-semibold">Chest (in)</div>
-                          <div className="font-semibold">Length (in)</div>
-                          <div className="font-semibold">Shoulder (in)</div>
-                          <div className="font-semibold">Sleeve (in)</div>
-                          <div className="font-semibold">Waist (in)</div>
-                          {sizes.map(s => (
-                            <div key={s} className="contents">
-                              <div>{s}</div>
-                              <div>18–24</div>
-                              <div>26–32</div>
-                              <div>16–22</div>
-                              <div>7–9</div>
-                              <div>28–38</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </details>
+                    </div>
                   </div>
                 )}
 
@@ -188,18 +188,38 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
                       const checkoutUrl = `/checkout?quantity=1&product=${product.id}&variant=${activeVariantId || 'raffle-blk'}&color=${encodeURIComponent(selectedColor)}&type=direct${sizeParam}`;
                       window.location.href = checkoutUrl;
                     }}
-                    className="w-full rounded-full bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-black/90"
+                    className="w-full rounded-full bg-black px-6 py-4 text-base font-medium text-white transition hover:bg-black/90 mb-8"
                   >
-                    Buy $100
+                    Buy — $100
+                  </button>
+                ) : product.status === "available" ? (
+                  <button
+                    onClick={() => {
+                      const selectedColor = activeVariantId ? product.variants?.find(v => v.id === activeVariantId)?.color || 'Default' : 'Default';
+                      const sizeParam = (product.category === "tee" || product.category === "hoodie") ? `&size=${encodeURIComponent(size)}` : '';
+                      const checkoutUrl = `/checkout?quantity=1&product=${product.id}&variant=${activeVariantId || product.id}&color=${encodeURIComponent(selectedColor)}&type=direct${sizeParam}`;
+                      window.location.href = checkoutUrl;
+                    }}
+                    className="w-full rounded-full bg-black text-white px-6 py-4 text-base font-medium mb-8 transition hover:bg-black/90"
+                  >
+                    Add to Cart — {product.price}
                   </button>
                 ) : (
-                  <div className="flex gap-3">
-                    <button className="rounded-full bg-black text-white px-6 py-3 text-sm font-medium disabled:opacity-60" disabled>
-                      {product.status === "available" ? "Add to Cart" : "Sold Out"}
-                    </button>
-                    <Link href="/shop" className="rounded-full border border-gray-300 bg-gray-100 px-6 py-3 text-sm font-medium text-black hover:bg-gray-200">Back</Link>
-                  </div>
+                  <button
+                    className="w-full rounded-full bg-gray-400 text-white px-6 py-4 text-base font-medium mb-8 cursor-not-allowed"
+                    disabled
+                  >
+                    Sold Out
+                  </button>
                 )}
+
+                {/* Shipping Information */}
+                <div className="border-t border-gray-200 pt-8">
+                  <h3 className="text-xl font-semibold mb-3">Shipping</h3>
+                  <p className="text-base text-gray-600 leading-relaxed">
+                    Free shipping on all orders. Please allow up to 4 weeks for delivery due to high demand.
+                  </p>
+                </div>
               </div>
             </div>
 
